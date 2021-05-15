@@ -1,0 +1,16 @@
+#! /usr/bin/Rscript
+# usage:
+# ./make_slides overview
+# cd modules; ../make_slides nimble_bugs
+# etc.
+
+library(rmarkdown)
+
+source <- commandArgs(trailingOnly = TRUE)
+
+if (file.exists(source)){
+    render(source, 'slidy_presentation') 
+    render(source, 'html_document', gsub('.Rmd','_alt.html',source))
+} else {
+    cat("Error: ", source, " does not exist.\n")
+}
