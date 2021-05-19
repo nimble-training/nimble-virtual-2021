@@ -1,0 +1,617 @@
+---
+title: "Ecological models in NIMBLE (part 1)"
+subtitle: "NIMBLE 2021 Virtual Workshop"
+author: "NIMBLE Development Team"
+date: "May 2021"
+output:
+  slidy_presentation: default
+  beamer_presentation: default
+---
+<style>
+slides > slide {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+has_nimbleEcology <- require(nimbleEcology)
+if(!has_nimbleEcology)
+  message("This module will use nimbleEcology, which you don't have installed.")
+doDHMMexample <- FALSE
+```
+
+Agenda
+=====
+
+In this module we will cover a variety of distributions and strategies relevant for ecological models.  These include:
+
+1. Cormack-Jolly-Seber (CJS) capture-recapture models
+2. Multi-state and multi-event capture-recapture models (Hidden Markov Models)
+3. Occupancy models
+4. Dynamic occupancy models
+5. N-mixture models
+6. Spatial capture-recapture (SCR) models
+
+Distributions that marginalize over latent states are available for the first five of these in the [`nimbleEcology` (Goldstein et al. 2020)](https://CRAN.R-project.org/package=nimbleEcology) package.
+
+Examples of occupancy, dynamic occupancy, and N-mixture models are given in [*One size does not fit all: Customizing MCMC methods for hierarchical models using NIMBLE* (Ponisio et al. 2020)](https://onlinelibrary.wiley.com/doi/full/10.1002/ece3.6053).
+
+Examples of CJS and HMM are given in [*Efficient Markov chain Monte Carlo sampling for hierarchical hidden Markov models* (Turek et al. 2016)](https://link.springer.com/article/10.1007/s10651-016-0353-z).
+
+Examples of SCR are given in [*Efficient Estimation of Large-Scale Spatial Capture-Recapture Models* (Turek et al. 2020, bioRxiv preprint)](https://www.biorxiv.org/content/10.1101/2020.05.07.081182v1).  Code for these is (mostly) in the Appendix but is not yet curated into a package.
+
+Some SCR steps are given in [*A local evaluation of the individual state-space to scale up Bayesian spatial capture-recapture* (Milleret et al. 2019). Ecology and Evolution 9:352–363](https://onlinelibrary.wiley.com/doi/full/10.1002/ece3.4751)
+
+We will go through some of the methods and results of these papers.
+
+We will focus on the code.  For `nimbleEcology`, the math related to the code is summarized in the [package vignette](https://cran.r-project.org/web/packages/nimbleEcology/vignettes/Introduction_to_nimbleEcology.html).
+
+Cormack-Jolly-Seber marginal distribution
+=====
+
+- Data are a capture history: `y[i,1:T]` = $[1, 0, 1, 1, 0, 0]$.
+- First entry must be `1` because CJS conditions on first capture.
+- A conventional way to write this in model code with individual latent states would be
+```{r, eval=FALSE}
+z[i,1] <- 1
+for(t in 2:T) {
+  z[i,t] ~ dbern(phi[i,t-1] * z[i,t-1])
+  y[i,t] ~ dbern(p[i,t] * z[i,t])
+}
+## Declarations needed for phi[i,t], survival of individual i at time t
+##                     and p[i,t], detection probability of individual i at time t
+```
+
+- `z[i, t]` until time of last capture would be provided as data.
+- `z[i, t]` after last capture would be sampled by MCMC as latent states.
+
+- `nimbleEcology` alternative way to write this:
+```{r, eval=FALSE}
+y[i, 1:T] ~ dCJS_vv(probSurvive = phi[i, 1:(T-1)],
+                    probCapture = p[i, 1:T],
+                    len = T)
+```
+
+- `_vv` indicates that both `probSurvive` and `probCapture` are vectors.
+
+Trying `dCJS` outside of a model
+=====
+
+It may help to explore how a distribution works outside of a model.  You can use (and compile) it as a `nimbleFunction` in R.
+
+```{r}
+y <- c(1, 0, 1, 1, 0, 0)
+probSurvive <- c(0.7, 0.6, 0.5, 0.4, 0.3)     # survival from t to t+1
+probCapture <- c(NA, 0.5, 0.7, 0.5, 0.6, 0.4) # capture probability at t
+dCJS_vv(y, probSurvive = probSurvive, probCapture = probCapture)
+# (In a model, we need explicit indexing with [].  Outside of a model, we don't.)
+c_dCJS_vv <- compileNimble(dCJS_vv)
+c_dCJS_vv(y, probSurvive = probSurvive, probCapture = probCapture)
+```
+
+Look at `dCJS_vv` source code
+=====
+
+You can look at a nimbleFunction like any other R function:
+```{r}
+dCJS_vv
+```
+
+Or you can go to the [github repository](https://github.com/nimble-dev/nimbleEcology/tree/master/R)
+
+Variants of `dCJS_[s|v][s|v]`
+=====
+
+Recall that `nimbleFunction`s require static typing.
+
+Unfortunately:
+
+- scalars are not automatically converted to length-one vectors.
+- vectors are not automatically converted to single-row or single-column matrices.
+
+This means we have implemented variants for `dCJS` (and others) depending on whether parameters are time-varying:
+
+- `dCJS_ss` : both survival and capture are scalars (both time-independent, aka time-constant).
+- `dCJS_sv` : survival is scalar (time-constant) but capture is vector (time-dependent).
+- `dCJS_vs` : survival is vector (time-dependent) but capture is scalar (time-constant).
+- `dCJS_vv` : both are time-dependent.
+
+Hidden Markov models (Intro)
+=====
+
+Hidden Markov models (HMMs) are a general statistical framework for:
+
+- systems with discrete latent states (usually) and discrete time steps
+- probabilities of transitioning between states at each time step
+- discrete observation categories and imperfect observation (misclassification)
+- probabilities of being observed in one category given the (true) latent state.
+- If transition and/or observation probabilities are time-dependent, we call it a "Dynamic HMM" (DHMM).
+
+Usually people use "Hidden Markov model" for discrete states and "state-space model" for the equivalent ideas with continuous states, but sometimes "Hidden Markov model" has been used for the latter.  They are also related to "partially observed Markov processes" and related terms.
+
+Hidden Markov models (in capture-recapture)
+=====
+
+- latent states are often discrete spatial locations, breeding status, or other categories in combination with demographic categories such as juvenile, adult or dead and male or female.
+- observation categories may include combinations of states (e.g. if juvenile and adult can't be distinguished in the field).
+- HMMs encompass multi-state and multi-event capture-recapture.
+
+Hidden Markov models (notation)
+=====
+
+- `T[i, j, t]`: probability of state change $i \rightarrow j$ in time step $t \rightarrow t+1$.
+- `O[i, j, t]`: probability of observing state $i$ as category $j$ at time $t$.
+- `init[i]`   : probability of being in state $i$ at $t = 1$.
+
+(In time-independent cases, the third index is dropped.)
+
+**Orientation of rows vs. columns ("from state" and "to state") may differ from other examples you've seen.**
+
+Orientation of "T[ from state, to state ]" is standard for HMMs but opposite of typical matrix population models.
+
+Hidden Markov models (variants in `nimble`)
+=====
+
+d[D]HMM[o]: 
+
+- "D" indicates time-varying transition probabilities.
+- "o" indicates time-varying observation probabilities.
+
+- dHMM: Neither is time-varying
+- dHMMo: Only observations are time-varying
+- dDHMM: Only transitions are time-varying
+- dDHMMo: Both are time-varying
+
+Hidden Markov models (typical implementation)
+=====
+
+A typical implementation in model code would be like:
+```{r, eval=FALSE}
+## Not indexing transition and observation probabilities by individual, for simplicity of example
+for(t in 1:T) {
+  for(i in 1:num_states) {
+    for(j in 1:num_states) {
+      T[i, j, t] <- some_calculation() # Involving survival and transition probabilities 
+                                       # that may depend on explanatory variables or random effects
+    }
+  }
+}
+## Some similar definition of O, observation probabilities
+for(k in 1:num_individuals) {
+  for(t in 2:T) {
+    z[k, t] ~ dcat(T[z[t-1], 1:num_states, t])
+  }
+  for(t in 1:T) {
+    y[k, t] ~ dcat(O[z[t], 1:num_states, t])
+  }
+}
+```
+
+Let's discuss:
+
+- Computational cost of MCMC sampling for `z[t]` based on `dcat`.
+- Dependencies of survival and transition probabilities (or their underlying parameters).
+
+Hidden Markov models (worked example)
+=====
+
+### Orchids (ladyslipper) example
+
+- From [*Bayesian Population Analysis Using WinBUGS*](https://www.vogelwarte.ch/de/projekte/publikationen/bpa/) (K&#233;ry and Schaub 2011), aka BPA.
+- Orchids modeled in states "vegetative", "flowering", "dormant", "dead"
+- Observations: "seen vegetative", "seen flowering", "not seen".
+- k = 11 annual observation periods 
+- n = 250 unique plants
+- n = 236 plants seen before the last observation time
+
+This is a simple multi-state model because the state when not seen is unknown.  The following would also work for multi-event models.
+
+Obviously multi-state models can be more complicated than this.
+
+
+Setup data
+=====
+Data and code (possibly adapted) from authors.
+```{r}
+CH <- as.matrix(read.table("orchids.txt", sep=" ", header = FALSE))
+head(CH) ## Glimpse of data
+n_occasions <- dim(CH)[2]
+## Compute vector with occasion of first capture
+f <- numeric()
+for (i in 1:dim(CH)[1])
+  f[i] <- min(which(CH[i,]!=0))
+
+## Modification for NIMBLE:
+CH <- CH[which(f!=11), ]  ## remove all individuals not seen until the last occasion: They contribute no information and create problems for the dDHMM version.
+## Reset f from the reduced CH
+f <- numeric()
+for (i in 1:dim(CH)[1])
+  f[i] <- min(which(CH[i,]!=0))
+
+## Recode CH matrix: note, a 0 is not allowed by WinBUGS!
+## 1 = seen vegetative, 2 = seen flowering, 3 = not seen 
+rCH <- CH  # Recoded CH 
+rCH[rCH==0] <- 3 
+
+## Function to create known latent states z 
+known_state_ms <- function(ms, notseen){
+    ## notseen: label for not seen 
+    state <- ms 
+    state[state==notseen] <- NA 
+    for (i in 1:dim(ms)[1]){
+        m <- min(which(!is.na(state[i,]))) 
+        state[i,m] <- NA 
+    }
+    return(state) 
+}
+## Bundle data 
+orchids_data <- list(y = rCH,
+                  f = f,
+                  n_occasions = dim(rCH)[2],
+                  nind = dim(rCH)[1],
+                  z = known_state_ms(rCH, 3)) 
+
+ms_init_z <- function(ch, f){
+   for (i in 1:dim(ch)[1]){ch[i,1:f[i]] <- NA}
+   states <- max(ch, na.rm = TRUE)
+   known.states <- 1:(states-1)
+   v <- which(ch==states)
+   ch[-v] <- NA
+   ch[v] <- sample(known.states, length(v), replace = TRUE)
+   return(ch)
+   }
+
+## Initial values 
+orchids_inits <- function(){
+    list(s = runif((dim(rCH)[2]-1), 0, 1),
+         z = ms_init_z(rCH, f)
+         )}
+
+```
+
+Original model code
+=====
+
+(Hint: Look for wasted computation, but also remember the authors intended this as a teaching example so they must have wanted it to be general.)
+
+- `ps[1, i, t, 2]` = probability of transition from state 1 to 2 for individual `i` from time `t` to time `t+1`.
+- `po[1, i, t, 2]` = probability of being observed in state 2 when in state 1 for individual `i` at time `t`.
+- `s[t]` = survival probability at time `t`.
+- `psiV[j]` = probability of transition from state 1 (Vegetative) to state j.
+- `psiF[j]` = probability of transition from state 2 (Flowering) to state j.
+- `psiD[j]` = probability of transition from state 3 (Dormant) to state j.
+
+```{r}
+orchids_code <- nimbleCode({
+  ## -------------------------------------------------
+  ## Parameters:
+  ## s: survival probability 
+  ## psiV: transitions from vegetative 
+  ## psiF: transitions from flowering 
+  ## psiD: transitions from dormant 
+  ## -------------------------------------------------
+  ## States (S):
+  ## 1 vegetative 
+  ## 2 flowering 
+  ## 3 dormant 
+  ## 4 dead 
+  ## Observations (O):  
+  ## 1 seen vegetative 
+  ## 2 seen flowering 
+  ## 3 not seen 
+  ## -------------------------------------------------
+  ## Priors and constraints 
+  ## Survival: uniform 
+  for (t in 1:(n_occasions-1)){  
+    s[t] ~ dunif(0, 1) 
+  }
+  ## Transitions: gamma priors 
+  for (i in 1:3){
+    a[i] ~ dgamma(1, 1) 
+    psiD[i] <- a[i]/sum(a[1:3]) 
+    b[i] ~ dgamma(1, 1) 
+    psiV[i] <- b[i]/sum(b[1:3]) 
+    c[i] ~ dgamma(1, 1) 
+    psiF[i] <- c[i]/sum(c[1:3]) 
+  }
+  ## Define state-transition and observation matrices 	
+  for (i in 1:nind){
+    ## Define probabilities of state S(t+1) given S(t) 
+    for (t in 1:(n_occasions-1)){
+      ps[1,i,t,1] <- s[t] * psiV[1]
+      ps[1,i,t,2] <- s[t] * psiV[2]
+      ps[1,i,t,3] <- s[t] * psiV[3]
+      ps[1,i,t,4] <- 1-s[t]
+      ps[2,i,t,1] <- s[t] * psiF[1]
+      ps[2,i,t,2] <- s[t] * psiF[2]
+      ps[2,i,t,3] <- s[t] * psiF[3]
+      ps[2,i,t,4] <- 1-s[t]
+      ps[3,i,t,1] <- s[t] * psiD[1]
+      ps[3,i,t,2] <- s[t] * psiD[2]
+      ps[3,i,t,3] <- s[t] * psiD[3]
+      ps[3,i,t,4] <- 1-s[t]
+      ps[4,i,t,1] <- 0 
+      ps[4,i,t,2] <- 0 
+      ps[4,i,t,3] <- 0 
+      ps[4,i,t,4] <- 1 
+      ## Define probabilities of O(t) given S(t) 
+      po[1,i,t,1] <- 1 
+      po[1,i,t,2] <- 0 
+      po[1,i,t,3] <- 0 
+      po[2,i,t,1] <- 0 
+      po[2,i,t,2] <- 1 
+      po[2,i,t,3] <- 0 
+      po[3,i,t,1] <- 0 
+      po[3,i,t,2] <- 0 
+      po[3,i,t,3] <- 1 
+      po[4,i,t,1] <- 0 
+      po[4,i,t,2] <- 0 
+      po[4,i,t,3] <- 1 
+    } #t 
+  } #i 
+  ## Likelihood
+  for (i in 1:nind){
+    ## Define latent state at first capture 
+    z[i,f[i]] <- y[i,f[i]]
+    for (t in (f[i]+1):n_occasions){
+      ## State process: draw S(t) given S(t-1)
+      z[i,t] ~ dcat(ps[z[i,t-1], i, t-1, 1:4]) 
+      ## Observation process: draw O(t) given S(t) 
+      y[i,t] ~ dcat(po[z[i,t], i, t-1, 1:3]) 
+    } #t 
+  } #i
+})
+set.seed(123)
+orchids_info <- list(code=orchids_code, constants=orchids_data, inits=orchids_inits())
+```
+
+Run original version in `nimble` and `jags`
+=====
+
+Some of the runs below may generate model initialization warnings.  They shouldn't be a problem.
+
+```{r, eval = doDHMMexample}
+orchids_result <- compareMCMCs(
+  orchids_info,
+  MCMCs = c("nimble", "jags"),
+  monitors = c("s", "psiV", "psiF", "psiD"),
+  MCMCcontrol = list(niter = 20000,
+                     burnin = 2000)
+)
+orchids_result <- renameMCMC(orchids_result, "nimble_orig", "nimble")
+orchids_result <- renameMCMC(orchids_result, "jags_orig", "jags")
+```
+
+Version without unnecessary (computationally wasteful) indexing over individuals and/or time
+=====
+```{r}
+orchids_code_faster <- nimbleCode({
+  ## -------------------------------------------------
+  ## Parameters:
+  ## s: survival probability 
+  ## psiV: transitions from vegetative 
+  ## psiF: transitions from flowering 
+  ## psiD: transitions from dormant 
+  ## -------------------------------------------------
+  ## States (S):
+  ## 1 vegetative 
+  ## 2 flowering 
+  ## 3 dormant 
+  ## 4 dead 
+  ## Observations (O):  
+  ## 1 seen vegetative 
+  ## 2 seen flowering 
+  ## 3 not seen 
+  ## -------------------------------------------------
+  ## Priors and constraints 
+  ## Survival: uniform 
+  for (t in 1:(n_occasions-1)){  
+    s[t] ~ dunif(0, 1) 
+  }
+  ## Transitions: gamma priors 
+  for (i in 1:3){
+    a[i] ~ dgamma(1, 1) 
+    psiD[i] <- a[i]/sum(a[1:3]) 
+    b[i] ~ dgamma(1, 1) 
+    psiV[i] <- b[i]/sum(b[1:3]) 
+    c[i] ~ dgamma(1, 1) 
+    psiF[i] <- c[i]/sum(c[1:3]) 
+  }
+  ## Define state-transition and observation matrices 	
+  ## Define probabilities of state S(t+1) given S(t) 
+  for (t in 1:(n_occasions-1)){
+    ps[1,t,1] <- s[t] * psiV[1]
+    ps[1,t,2] <- s[t] * psiV[2]
+    ps[1,t,3] <- s[t] * psiV[3]
+    ps[1,t,4] <- 1-s[t]
+    ps[2,t,1] <- s[t] * psiF[1]
+    ps[2,t,2] <- s[t] * psiF[2]
+    ps[2,t,3] <- s[t] * psiF[3]
+    ps[2,t,4] <- 1-s[t]
+    ps[3,t,1] <- s[t] * psiD[1]
+    ps[3,t,2] <- s[t] * psiD[2]
+    ps[3,t,3] <- s[t] * psiD[3]
+    ps[3,t,4] <- 1-s[t]
+    ps[4,t,1] <- 0 
+    ps[4,t,2] <- 0 
+    ps[4,t,3] <- 0 
+    ps[4,t,4] <- 1 
+  }
+  ## Define probabilities of O(t) given S(t) 
+  po[1,1] <- 1 
+  po[1,2] <- 0 
+  po[1,3] <- 0 
+  po[2,1] <- 0 
+  po[2,2] <- 1 
+  po[2,3] <- 0 
+  po[3,1] <- 0 
+  po[3,2] <- 0 
+  po[3,3] <- 1 
+  po[4,1] <- 0 
+  po[4,2] <- 0 
+  po[4,3] <- 1 
+  ## Likelihood
+  for (i in 1:nind){
+    ## Define latent state at first capture 
+    z[i,f[i]] <- y[i,f[i]]
+    for (t in (f[i]+1):n_occasions){
+      ## State process: draw S(t) given S(t-1)
+      z[i,t] ~ dcat(ps[z[i,t-1], t-1, 1:4]) 
+      ## Observation process: draw O(t) given S(t) 
+      y[i,t] ~ dcat(po[z[i,t], 1:3]) 
+    } #t 
+  } #i
+})
+```
+
+```{r, eval=doDHMMexample}
+set.seed(123)
+orchids_info_faster <- list(code=orchids_code_faster,
+                            constants=orchids_data, 
+                            inits=orchids_inits())
+```
+
+Run version without unnecessary indexing (faster)
+=====
+
+Note: Some elements of `z` (with perfect observation categories) are provided as `data`.  Others as `inits`.
+
+```{r, eval=doDHMMexample}
+orchids_result_faster <- compareMCMCs(
+  orchids_info_faster,
+  MCMCs = c("nimble", "jags"),
+  monitors = c("s", "psiV", "psiF", "psiD"),
+  MCMCcontrol = list(niter = 20000,
+                     burnin = 2000)
+)
+orchids_result_faster <- renameMCMC(orchids_result_faster, "nimble_faster", "nimble")
+orchids_result_faster <- renameMCMC(orchids_result_faster, "jags_faster", "jags")
+```
+
+DHMM version
+=====
+```{r}
+orchids_code_DHMM <- quote({
+  ## -------------------------------------------------
+  ## Parameters:
+  ## s: survival probability 
+  ## psiV: transitions from vegetative 
+  ## psiF: transitions from flowering 
+  ## psiD: transitions from dormant 
+  ## -------------------------------------------------
+  ## States (S):
+  ## 1 vegetative 
+  ## 2 flowering 
+  ## 3 dormant 
+  ## 4 dead 
+  ## Observations (O):  
+  ## 1 seen vegetative 
+  ## 2 seen flowering 
+  ## 3 not seen 
+  ## -------------------------------------------------
+  ## Priors and constraints 
+  ## Survival: uniform 
+  for (t in 1:(k-1)){  
+    s[t] ~ dunif(0, 1)
+  }
+  ## Transitions: gamma priors 
+  for (i in 1:3){
+    a[i] ~ dgamma(1, 1) 
+    psiD[i] <- a[i]/sum(a[1:3]) 
+    b[i] ~ dgamma(1, 1) 
+    psiV[i] <- b[i]/sum(b[1:3]) 
+    c[i] ~ dgamma(1, 1) 
+    psiF[i] <- c[i]/sum(c[1:3]) 
+  }
+  ## Define state-transition and observation matrices 	
+  for (t in 1:(k-1)) {
+    T[1,1,t] <- s[t] * psiV[1]
+    T[1,2,t] <- s[t] * psiV[2]
+    T[1,3,t] <- s[t] * psiV[3]
+    T[1,4,t] <- 1-s[t]
+    T[2,1,t] <- s[t] * psiF[1]
+    T[2,2,t] <- s[t] * psiF[2]
+    T[2,3,t] <- s[t] * psiF[3]
+    T[2,4,t] <- 1-s[t]
+    T[3,1,t] <- s[t] * psiD[1]
+    T[3,2,t] <- s[t] * psiD[2]
+    T[3,3,t] <- s[t] * psiD[3]
+    T[3,4,t] <- 1-s[t]
+    T[4,1,t] <- 0
+    T[4,2,t] <- 0
+    T[4,3,t] <- 0
+    T[4,4,t] <- 1
+  }
+  O[1,1] <- 1 
+  O[1,2] <- 0 
+  O[1,3] <- 0 
+  O[2,1] <- 0 
+  O[2,2] <- 1 
+  O[2,3] <- 0 
+  O[3,1] <- 0 
+  O[3,2] <- 0 
+  O[3,3] <- 1 
+  O[4,1] <- 0 
+  O[4,2] <- 0 
+  O[4,3] <- 1 
+  for(i in 1:nind) {
+    for(j in 1:4)
+      init[i, j] <- y2[i, f[i]]==j ## y2 is the same as y, to avoid a cycle in graph (i.e. y[i, f[i]] depends on init[i, 1:3] which depends on y[i, f[i]])
+  }
+  for (i in 1:nind) {
+    y[i, f[i]:k] ~ dDHMM(init = init[i, 1:4],
+                         probObs = O[1:4,1:3],
+                         probTrans = T[1:4,1:4,f[i]:(k-1)],  ## Note: possible length 1 issue
+                         len = k-f[i]+1,
+                         checkRowSums = 0)
+  }
+})
+orchids_constants_DHMM <- list(f=f,
+                               k=dim(rCH)[2],
+                               nind=dim(rCH)[1])
+orchids_data_DHMM <- list(y = rCH, y2 = rCH)
+orchids_inits_DHMM <- function() {
+  list(s = runif((dim(rCH)[2]-1), 0, 1),
+       a = rep(1,3),
+       b = rep(1,3),
+       c = rep(1,3))
+}
+set.seed(123)
+orchids_info_DHMM <- list(code=orchids_code_DHMM, 
+                          constants=orchids_constants_DHMM,
+                          data = orchids_data_DHMM,
+                          inits=orchids_inits_DHMM())
+```
+
+```{r, eval=doDHMMexample}
+orchids_result_DHMM <- compareMCMCs(
+  orchids_info_DHMM,
+  MCMCs = c("nimble"),
+  monitors = c("s", "psiV", "psiF", "psiD"),
+  MCMCcontrol = list(niter = 20000,
+                     burnin = 2000)
+)
+orchids_result_DHMM <- renameMCMC(orchids_result_DHMM, "nimble_DHMM", "nimble")
+```
+
+Make results figure
+=====
+```{r, eval=doDHMMexample, echo=FALSE}
+# Code for generating results that come with slides
+make_MCMC_comparison_pages(c(orchids_result, orchids_result_faster, orchids_result_DHMM),
+                           dir = "orchid_results_with_slides",
+                           modelName = "orchids")
+```
+
+```{r, eval=FALSE}
+# Code for your own results:
+make_MCMC_comparison_pages(c(orchids_result, orchids_result_faster, orchids_result_DHMM),
+                           dir = "your_orchid_results",
+                           modelName = "orchids")
+```
+
+Results that come with these slides are [here](orchid_results_with_slides/orchids.html).
+
+Results if you generate them yourself will be [here](your_orchid_results/orchids.html).

@@ -1,0 +1,395 @@
+---
+title: "Ecological models in NIMBLE (part 2)"
+subtitle: "NIMBLE 2021 Virtual Workshop"
+author: "NIMBLE Development Team"
+date: "May 2021"
+output:
+  slidy_presentation: default
+  beamer_presentation: default
+---
+<style>
+slides > slide {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval=FALSE)
+library(nimble)
+```
+
+Occupancy models in `nimbleEcology`
+=====
+
+- `probOcc` = probability the site is occupied
+- `probDetect[t]` = detection probability at time t.
+
+### Variants
+
+- `dOcc_s`: time-independent (scalar) detection probability
+- `dOcc_v`: time-varying (vector) detection probability
+
+### Example
+
+```{r, eval=FALSE}
+y[i, 1:T] ~ dOcc_v(probOcc = psi[i], 
+                   probDetect = p[i, 1:T], len = T)
+```
+
+- `i` indexes site.
+
+Dynamic occupancy models in `nimble`
+=====
+
+- `probPersist[t]` = persistence probability (occupied $\rightarrow$ occupied)
+- `probColonize[t]` = colonization probability (unoccupied $\rightarrow$ occupied)
+- `p[t, k]` = detection probability in year (primary) t, sampling visit k (secondary occasion)
+- `start[t]` = first sampling occasion in year t.
+- `end[t]` = last sampling occasion in year t.
+
+### Variants
+
+- `dDynOcc_[s|v][s|v][s|v|m]`
+- first `[s|v]` is for persistence probability (time-independent or time-varying)
+- second `[s|v]` is for colonization probability (time-independent or time-varying)
+- third `[s|v|m]` is for detection probability (time-independent, time-varying, or time-visit-varying)
+
+### Example
+
+```{r, eval=FALSE}
+y[1:num_sites, 1:num_years] ~ dDynOcc_svv(probPersist = psi, 
+                                          probColonize = gamma[1:num_years],
+                                          p = p[1:num_years])
+```
+
+N-mixture models in `nimble`
+=====
+
+Poisson-binomial mixture distribution of abundance.
+
+- `lambda` = Poisson mean
+- `prob[k]` = detection probability on visit `k`.
+- `Nmin` = start of summation range (or -1)
+- `Nmax` = end of summation range (or -1)
+- `len` = number of counts (visits)
+
+If `Nmin` and `Nmax` are both `-1`, a range of summation is determined automatically.
+
+### Variants
+
+- `dNmixture_s` : time-independent detection probability (scalar)
+- `dNmixture_v` : time-varying detection probability (vector)
+
+### Example
+
+```{r, eval=FALSE}
+y[i, 1:num_visits] ~ dNmixture_v(lambda[i],
+                                 prob[1:num_visits],
+                                 Nmin = -1, Nmax = -1,
+                                 len = num_visits)
+```
+
+More about marginalizing vs. sampling
+=====
+
+So far, writing marginalized distributions has been more efficient than not.
+
+`dDynOcc` and `dNmixture` illustrate why sometimes MCMC sampling is more efficient.
+
+MCMC sampling is a form of Monte Carlo integration.
+
+If marginalization over latent states is computationally costly, MCMC sampling of latent states may be better.
+
+Deterministic model nodes represent "caching" of intermediate calculations.  That can create efficiency.
+
+Some marginalizations or steps in them can be written directly in model code to create caching.
+
+Much remains to be explored on these topics.
+
+See Ponisio et al. (linked above) and [slides with our results](nimble_ecological_examples.pdf).
+
+Closed-population single-season SCR example (wolverines)
+=====
+
+- Wolverines (gulo gulo) in Norway
+- Data from Milleret, Dupont, Bonenfont, Brøseth, Flagstad, Sutherland, and Bischof.2019. A local evaluation of the individual state-space to scale up Bayesian spatial capture-recapture. Ecology and Evolution 9:352–363
+- Data originally from Norwegian Institute for Nature Research (NINA) and RovQuant (NMBU)
+- January-May 2012
+- 196 female wolverines detected
+- 453 detections
+- Spatial area of >200,000 square km
+- >10000 detectors
+- Data augmentation to estimate total population size.
+- A subset of data from a much larger study.
+- JAGS without local trap calculations ran for 30 days before crashing.
+
+Improvements to the wolverine SCR model
+=====
+
+- (1) Vectorize some calculations and create habitat mask distribution
+- (2)Jointly sample activity-center dimensions
+- (3a) Restrict calculations to local detectors
+- (3b) Custom distribution with sparse data representation
+- (4) Data augmentation: skip unnecessary calculations for non-real individuals.
+
+Vectorize some calculations
+=====
+
+### Conventional code would look something like this:
+
+```{r, eval=FALSE}
+for(i in 1:n.nindividuals) {
+  for(j in 1:n.detectors) {
+    d2[i, j] <- (sxy[i,1] - detector.xy[j,1])^2 + (sxy[i,2] - detector.xy[j,2])^2
+    p[i, j] <- p0 * exp(alpha * d2[i,j])
+    y[i, j] <- dbern(prob = p[i, j]*z[i], size = trials[j]) # z[i] is latent state
+  }
+}
+```
+
+Comments:
+
+- There are very many nodes.
+- Every time `sxy[i, 1]` or `sxy[i, 2]` is changed (in a sampler),  distances to all detectors, their detection probabilities, and related data log probabilities need to be calculated.
+
+### Alternative with vectorized declarations:
+
+```{r, eval=FALSE}
+for(i in 1:n.individuals) {
+  d2[i, 1:n.detectors] <- (sxy[i,1] - detector.xy[1:n.detectors,1])^2 +
+    (sxy[i,2] - detector.xy[1:n.detectors,2])^2
+  p[i, 1:n.detectors] <- p0 * exp(alpha * d2[i,1:n.detectors])
+  y[i, 1:n.detectors] ~ dBernoulliVector(prob = p[i,1:n.detectors]*z[i],
+                                         trials =  trials[1:n.detectors])
+```
+
+This creates fewer nodes, faster building steps, and potentially faster execution.
+
+### `dBernoulliVector` is very simple:
+
+```{r, eval=FALSE}
+dBernoulliVector <- nimbleFunction(
+  run = function(x = double(1), prob = double(1),
+                 trials = double(1), log = integer(0)) {
+    returnType(double(0))
+    logProb <- sum(dbinom(x, prob = prob, size = trials, log = TRUE))
+    return(logProb)
+  }
+)
+```
+
+Habitat mask distribution
+=====
+
+This idea can be done relatively easily directly in model code.  However, doing it with a custom distribution:
+
+- may simplify, clarify, and be more generalizable,
+- could be turned into a prior, which can create efficiency.
+    - in most samplers, when a prior log probability is -Inf (i.e. the value has probability = 0 and hence is not allowed by the prior), subsequent calculations are skipped.
+
+```{r, eval=FALSE}
+sxy[i,1] ~ dunif(0, x.max)
+sxy[i,2] ~ dunif(0, y.max)
+ones[i] ~ dHabitat(sxy = sxy[i,1:2],
+                   lower = lowerCoords[1:2],
+                   upper = upperCoords[1:2], 
+                   habitat = habitat.mx[1:y.max,1:x.max])
+```
+
+```{r, val=FALSE}
+dHabitat <- nimbleFunction(
+  run = function(x = double(0), sxy = double(1), lower = double(1),
+                   upper = double(1), habitat = double(2), log = double()) {
+    if(sxy[1] < lower[1]) return(-Inf)
+    if(sxy[1] > upper[1]) return(-Inf)
+    if(sxy[2] < lower[2]) return(-Inf)
+    if(sxy[2] > upper[2]) return(-Inf)
+    returnType(double())
+    if(habitat[trunc(sxy[2])+1, trunc(sxy[1])+1] == 0) return(-Inf) else return(0)
+  }
+)
+```
+
+Jointly sampler activity center coordinates
+=====
+
+```{r}
+# example for i = 1.  In general we would programmatically do this for all i.
+mcmcConf$removeSamplers('s[1, 1:2]')
+mcmcConf$addSampler(target = c('s[1, 1]', 's[1, 2]'),
+                    type = "RW_block",
+                    control = list(adaptScaleOnly = TRUE))
+```
+
+- This makes sense because the two coordinates of an activity center location share exactly the same dependencies.
+
+Restrict calculations to local detectors and use sparse data representation
+=====
+
+- This code will benefit from revision and renaming.
+
+```{r}
+for(i in 1:n.individuals) {
+  y[i,1:n.detectors] ~
+    dBernoulliVector3(pZero = p0, 
+                      sxy = sxy[i,1:2],
+                      sigma = sigma, 
+                      nbDetections = nbDetections[i],
+                      yDets = yDets[i,1:nMaxDetectors],
+                      detector.xy = detector.xy[1:n.detectors,1:2],
+                      trials = trials[1:n.detectors],
+                      detectorIndex = detectorIndex[1:n.cells,1:maxNBDets],
+                      nDetectorsLESS = nDetectorsLESS[1:n.cells],
+                      ResizeFactor = ResizeFactor, 
+                      maxNBDets = maxNBDets,
+                      habitatID = habitatIDDet[1:y.maxDet,1:x.maxDet],
+                      indicator = z[i])
+}
+```
+
+- `pZero` is probability of detection at distance = 0.
+- `sxy` is location (of activity center)
+- `sigma` is detection decay parameter.
+
+What does this custom "distribution" do?
+=====
+
+Actual code would be a bit of slog.  I'll use an outline of key ideas instead:
+
+### Sparse data representation
+
+1. The "data" `y[i, 1:n.detectors]` is a vector of counts (detections) *only where detections occurred*.
+2. `n.detectors` is maximum (over individuals) number of detectors where an individual has been seen.
+3. `nbDetections[i]` is the number of non-zero counts (detections).
+4. `yDets[i, 1:n.detectors]` gives the detector IDs corresponding to `y[i, 1:n.detectors]`.
+5. Only the first `nbDetections[i]` entries in `y[i, 1:n.detectors]` and `yDets[i, 1:n.detectors]` are used.
+
+### Use local detectors only ("LESS")
+
+We want a system so that we only scan (pre-calculated) detectors that are within a  maximum reasonable range of the activity center.
+
+"Maximum reasonable range" must be something bigger than we expect the model to estimate.
+
+1. habitatIDDet[i, j] gives a habitat grid cell ID (call it `k` below) for spatial grid cell (i, j).  Indices `i` and `j` can be calculated by rounding to nearing grid point from `sxy`.
+2. It is important to remember the spatial area may be irregular, not nicely rectangular.
+3. nDetectorLESS[k] gives the number of detectors within range of grid cell k.
+4. `maxNBDets` is the maximum of `nDetectorLESS[]`
+5. `detectorIndex[k, 1:nDetectorLESS[k]]` are the indices of detectors within range of detector `k`.
+
+### Distance calculations and detection probabilities are included within the "distribution".
+
+- This makes it simpler to also do those calculations only for relevant ("reasonable range") detectors.
+- This could be a tradeoff and could alternatively be raised into the model.
+
+### How we put it all together
+
+1. If there are any detections outside "reasonable range", return `log(0) = -Inf`.
+2. Iterate (loop) over only detectors within reasonable range.
+3. Treat all data as "0" except for reported detections.
+
+Skip unnecessary calculations in data augmentation
+=====
+
+When using data augmentation:
+
+- `z[i]` is an indicator of whether a "virtual individual" is real (1) or not (0).
+- Probability of inclusion (being "real") has a uniform(0,1) prior.
+- This is an implementation trick to achieve flat prior on number of never-observed individuals (Royle et al. Biometrics paper).
+- For observed individuals, `z[i] = 1` is data.
+- For plenty of virtual never-observed individuals, one sets `z[i] = NA` so it will be sampled by MCMC as missing data.
+- There are lots of interested data-augmentation implementation or replacement questions, but here we focus on this implementation.
+- Sampling cost:
+    - On every MCMC iteration, every `z[i]` will be updated (could customize!).
+    - For low detection probabilities, we need lots of `z[i]`s!
+    - Every update to every `z[i]` invokes dependencies through detector distances, detection probabilities, and probabilities of always all-zero "data".
+    - But if `z[i] = 0`, the resulting data probability can be exceedingly simple:
+        - If there are any detections, the log probability is `-Inf` (in principle, but this doesn't happen because augmented individuals always have all zeros.).
+        - If there are no detections, the log probability is `log(1) = 0`.  No distance calculations are needed.
+
+### Efficient implementation:
+
+- The user-defined distribution takes the indicator node as input.
+- If indicator = 0, all calculations are short-cut.
+- In the wolverine example, this helps substantially.
+
+Open-population multi-season spatial capture-recapture example
+=====
+
+- From Torbjørn Ergon and Beth Gardner (2014). “Separating mortality and emigration: modelling space use, dispersal and survival with robust-design spatial capturerecapture data”. Methods in Ecology and Evolution 5: 1327–1336.
+- Field voles (Microtus agrestis)
+- 192 traps
+- 4 primary trapping periods (21-23 days)
+- 3-5 secondary trap checks (12 hours)
+- Survival, dispersal of activity centers, and detection modeled.
+
+Improvements to the vole example:
+=====
+
+1. Block sampling, marginalize over latent states
+2. Rewrite (equivalent) activity-center movement distribution
+3. Custom functions to achieve only local trap calculations
+
+Step 1 marginalization is like the HMMs described earlier.
+Step 3 local trap calculations is like "LESS" described for wolverine example.
+
+Rewrite movement distribution
+=====
+
+Original / traditional version of movement component:
+
+```{r}
+for(sex in 1:2) {
+  dmean[sex] ~ dunif(0, 100)
+  dlambda[sex] <- 1/dmean[sex]
+}
+#...
+for(k in first[i]:(last[i]-1)) {
+  theta[i, k] ~ dunif(-3.141593, 3.141593) # dispersal direction
+  d[i, k] ~ dexp(dlambda[gr[i]])
+  S[i, 1, k+1] <- S[i, 1, k] + d[i, k] * cos(theta[i, k])
+  S[i, 2, k+1] <- S[i, 2, k] + d[i, k] * sin(theta[i, k])
+}
+```
+
+- `S[i, 1:2, k]` are coordinates of individual `i` at time `k`.
+- `theta[i, k]` is direction of movement
+- `dlambda[sex]` is sex-specific mean movement distance
+- `d[i, k]` is movement distance of individual `i` at time `k`.
+
+## Big problem:
+
+- This is in the inefficient format for writing state-space models illustrated previously.
+- MCMC updates to each stochastic node (`d[i, k]` or `theta[i, k]`) will require calculations for *all subsequent times*
+- Those calculations involve all detections (distances, detection probabilities) at all subsequent times!
+
+### Solution:
+
+Derive the distribution defined by step sizes and directions:
+
+```{r}
+for(k in first[i]:(last[i]-1)) {
+  S[i, 1:2, k+1] ~ dDispersal(S[i, 1:2, k], dlambda[gr[i]])
+}
+```
+
+```{r}
+dDispersal <- nimbleFunction(
+  run = function(x = double(1), 
+                 S = double(1),
+                 lam = double(),
+                 log = double()) {
+    dist <- sqrt(sum((x-S)^2))
+    lp <- dexp(dist, rate = lam, log = TRUE) - log(dist)
+    returnType(double())
+    if(log) return(lp) else return(exp(lp))
+  }
+)
+```
+
+Now each location at each time is a stochastic node and the dependency structure of the model is *much* lighter.
+
+Conclusion
+=====
+
+There should be many other useful advances that could be made with NIMBLE model extensions and sampler customizations for ecological models.

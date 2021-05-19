@@ -15,7 +15,8 @@ All materials for the workshop will be in this GitHub repository. If you're fami
 There is some overview information [here (UNDER CONSTRUCTION)](https://htmlpreview.github.io/?https://github.com/nimble-training/nimble-virtual-2021/blob/master/overview.html), including links to the content modules in order.
 
 Time: 8 am - 1 pm California time (GMT-8); 11 am - 4 pm Eastern US time.
-Location: Zoom (see email) and [Slack](https://2021nimbleworkshop.slack.com).
+
+Location: Zoom (see email) and [Slack (UNDER CONSTRUCTION)](https://2021nimbleworkshop.slack.com).
 
 ## Slack and Zoom instructions and tips/tricks
 

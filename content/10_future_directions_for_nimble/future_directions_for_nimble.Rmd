@@ -1,0 +1,80 @@
+---
+title: "Future directions in NIMBLE development"
+subtitle: "NIMBLE 2021 Virtual Workshop"
+author: "NIMBLE Development Team"
+date: "May 2021"
+
+output:
+  slidy_presentation: default
+  beamer_presentation: default
+---
+<style>
+slides > slide {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Automatic differentiation
+=====
+
+### Ways to get derivatives on a computer:
+- finite element approximation: `(f(x + epsilon) - f(x)) / epsilon`
+- symbolic (maybe from computer algebra): `(d/dx) exp(ax) = a* exp(ax)`
+- AD: algorithmic or automatic differentiation: use new versions of "a", "x", and "exp" to track derivative information through `exp(ax)`.
+
+### Successful uses of AD in statistical software:
+
+- ADMB, which grew into TMB, which uses AD via CppAD package.
+- Stan has its own AD system.
+
+### NIMBLE plan:
+
+- Code-generate C++ for CppAD.
+    - This is largely built but involves a lot of code infrastructure.
+- The gives us access to multiple orders of derivatives
+- We plan to implement
+    - Hamiltonian Monte Carlo: It works!
+    - Langevin sampler: It works!
+    - Laplace approximation: It is drafted!
+    - Caveat: These are all complex methods and there is lots of testing, debugging, and efficiency improvement to do.
+- Capability to access derivatives for "arbitrary" (within sense) nimbleFunctions and for subsets of model calculations will enable a lot of flexible algorithm development.
+
+nCompiler
+=====
+
+The "NIMBLE compiler" has been very successful!
+
+The "NIMBLE compiler" has many limitations!
+
+We are re-designing the "NIMBLE compiler" from the ground up with some of the following goals:
+
+- Be a stand-along R development tool.
+- Clarify class / function programming concepts.
+- Integrate with Rcpp more thoroughly.
+- Support parallelization natively.
+- Support saving / loading of compiled objects natively.
+- Support automatic differentiation natively
+- Generate R and C++ code into R package structure.
+- Swap into NIMBLE in place of the current "NIMBLE compiler."
+
+Greater capability for domain-application packages
+=====
+
+We want people to be able more easily to build R packages for specific types of models or methods.
+
+- Custom MCMC configuration (works)
+- Expansion / plug-in of model macros or modules
+
+Greater efficiency at various stages
+=====
+
+- Faster model building and compilation
+- Reduced memory footprint
+- Greater scalability
+- Always, greater run-time efficiency!
+

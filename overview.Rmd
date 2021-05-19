@@ -1,0 +1,137 @@
+---
+title: "NIMBLE 2021 Virtual Workshop"
+subtitle: "NIMBLE 2021 Virtual Workshop"
+author: "NIMBLE Development Team"
+date: "May 2021"
+output:
+  slidy_presentation: default
+  html_document:
+    code_folding: show
+---
+<style>
+slides > slide {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+}
+</style>
+
+# A few administrative things
+
+## Where to find stuff
+
+The GitHub site ([https://github.com/nimble-training/nimble-virtual-2021](https://github.com/nimble-training/nimble-virtual-2021)) is the main repository for materials for the modules; you can also get the individual files from GitHub. 
+
+If you're not familiar with Git, you can get these materials by simply going to [https://github.com/nimble-training/nimble-virtual-2021](https://github.com/nimble-training/nimble-virtual-2021) and click on the 'Download ZIP' button in the right side of the window or simply click [here](https://github.com/nimble-training/nimble-virtual-2021/archive/main.zip). See also slide 6 in this document for how to get them using Git or from within RStudio.
+
+
+## Asking questions and making comments
+
+Please ask questions and make comments as we go through the material.
+
+# How we'll operate
+
+The workshop will be organized in modules, each of which will be a combination of lecture/demo presentation. 
+
+# Suggestions on how to get the most out of the workshop
+
+We encourage you to:
+
+- try out the code as we walk through it
+-  keep your eyes open! -- We'll illustrate a lot of syntax and concepts by example
+- try to guess what the syntax means in cases we haven't yet seen that syntax
+- play with it and try variations and try to break it and see what happens
+- post a comment on Slack or the Zoom chat if something interesting happens as you experiment
+- ask questions!
+
+
+A few additional thoughts on my pedagogical philosophy here:
+
+- We want to expose you to a lot of tools and ideas that you can come back to when you need them and when you have time for more depth.
+- Our aim is not to show you how to use specific statistical methods or analysis techniques. Our goal is to get you up to speed generally in NIMBLE.
+- It can be hard to absorb everything in such a concentrated situation. Hopefully the material presented will be useful to you over the longer-term as you do more work with NIMBLE.
+
+# RStudio and R Markdown
+
+We'll present most of the material from within RStudio, using R Markdown documents with embedded R code. R Markdown is an extension to the Markdown markup language that makes it easy to write HTML in a simple plain text format.  This allows us to both run the R/NIMBLE code directly as well as compile on-the-fly to an HTML file that can be used for presentation. All files will be available on [GitHub](https://github.com/nimble-training/nimble-virtual-2021).  
+
+Note: The files named *foo.html* have individual slides, while the files named *foo_alt.html* have the same content but all on one page.
+
+Warning: in some cases the processing of the R code in the R Markdown is screwy and the slides have error messages that do not occur if you just run the code directly in R or RStudio. 
+
+# Getting the workshop materials
+
+To download the files, you can do any of the following. 
+
+## From a browser
+
+Simply go to [https://github.com/nimble-training/nimble-virtual-2021](https://github.com/nimble-training/nimble-virtual-2021) and click on the 'Download ZIP' button in the right side of the window or simply click [here](https://github.com/nimble-training/nimble-virtual-2021/archive/main.zip).
+
+## Within RStudio
+
+Within RStudio go to File->New Project->Version Control->Git and enter:
+
+- "Repository URL": https://github.com/nimble-training/nimble-virtual-2021
+- "Project Directory Name": nimble-virtual-2021 (or something else of your choosing)
+- "Directory": ~/Desktop (or somewhere of your choosing)
+
+Then to update from the repository to get any changes we've made, you can select (from within RStudio):
+Tools->Version Control->Pull Branches
+
+or from the Environment/History/Git window, click on the Git tab and then on the blue down arrow.
+
+Be warned that you probably do not want to make your own notes or changes to the files we are providing. Because if you do, and you then do a "Git Pull" to update the materials, you'll have to deal with the conflict between your local version and our version. You probably will want to make a personal copy of such files in another directory or by making copies of files with new names.
+
+## From a terminal window
+
+Run the following commands:
+
+- `cd /directory/where/you/want/repository/located`
+- `git clone https://github.com/nimble-training/nimble-virtual-2021`
+
+Then to update from the repository to get any changes we've made:
+
+- `cd /directory/where/you/put/the/repository/nimble-virtual-2021`
+- `git pull`
+
+# Installing NIMBLE
+
+NIMBLE is on CRAN, so in general it will be straightforward to install, but you do need a compiler and related tools on your system.  
+
+In summary, here are the steps.
+
+1. Install compiler tools on your system. [https://r-nimble.org/download](https://r-nimble.org/download) has more details on how to install *Rtools* on Windows and how to install the
+command line tools of *Xcode* on a Mac.
+2. Install the *nimble* package from CRAN. 
+
+More details can also be found in Section 4 of the [NIMBLE manual](https://r-nimble.org/html_manual/cha-installing-nimble.html).
+
+# The Legal Stuff
+
+- This material was created by the NIMBLE development team and is licensed under a Creative Commons Attribution 3.0 Unported License. You are free to use, modify, and redistribute any of this material with attribution.
+
+- NIMBLE is/has been supported by NSF grants DBI-1147230, ACI-1550488, and DMS-1622444, with additional support provided by postdoctoral funding for D. Turek from the Berkeley Institute for Data Science and Google Summer of Code fellowships for N. Michaud (2015) and C. Lewis-Beck (2017).
+
+# Outline
+
+Here are the modules we'll work through for this short course.
+
+ - Day 1
+ 
+    - [1. Introduction to NIMBLE](content/1_introduction_to_nimble/introduction_to_nimble.html)
+    - [2. Models in NIMBLE](content/2_nimble_models/nimble_models.html)
+    - [3. Comparing and customizing MCMC](content/3_comparing_and_customizing_mcmc/comparing_and_customizing_mcmc.html)
+    - [4. Improving MCMC](content/4_improving_mcmc/improving_mcmc.html)
+
+ - Day 2
+
+    - [5. User-defined distributions and functions](content/5_user_defined/user_defined.html) 
+    - [6. Basic programming in NIMBLE](content/6_writing_new_mcmc_samplers/writing_new_mcmc_samplers.html)
+    - [7. Spatial modeling](content/7_spatial_models/spatial_models.html)
+  
+ - Day 3
+ 
+    - [8. Model selection, including Bayesian nonparametrics](content/8_model_selection_bnp/model_selection_bnp.html)
+    - [9a. Ecological modeling](content/9_ecology/ecology.html) 
+    - [9b. Programming in NIMBLE](content/9_programming/programming.html)
+
+
