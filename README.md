@@ -40,7 +40,7 @@ Day 2 (Thursday May 27):
 6. (9:15 am - 10:00 am) The basics of programming algorithms in NIMBLE
 7. (10:30 pm - 1 pm with a 15 minute break) Spatial modeling
 
-Day 3 (Friday 28):
+Day 3 (Friday May 28):
 
 8. (8 am - 9:30 am) Model selection and Bayesian nonparametrics
 9. (9:45 am - 1 pm with breaks) Special topics breakouts
