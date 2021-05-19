@@ -1,0 +1,547 @@
+---
+title: "nimbleFunction programming"
+subtitle: "NIMBLE 2021 Virtual Workshop"
+author: "NIMBLE Development Team"
+date: "May 2021"
+
+output:
+  slidy_presentation: default
+  beamer_presentation: default
+---
+<style>
+slides > slide {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(nimble)
+if(!require(coda))
+  warning("This Rmd file needs package coda")
+has_compareMCMCs <- require(compareMCMCs)
+if(!has_compareMCMCs)
+  warning("This Rmd file uses package compareMCMCs from github.  Sections using it will be skipped.")
+generate_orig_results <- FALSE
+```
+
+# Agenda
+
+1. Review of nimbleFunctions with setupCode
+2. nimbleFunctions for new (i.e., user-defined) samplers
+   1. Design of NIMBLE's MCMC system
+   2. Setting up a new sampler: A simple Metropolis-Hastings example
+   3. Worked example: sampler that jointly updates intercepts and random effects in the E. cervi example.
+3. modelValues for storing values from a model
+4. nimbleFunctions for post-processing
+   1. Worked example: posterior predictive checks
+   2. Worked example: sampling from marginalized nodes
+5. Calling out to R and C++ from nimbleFunctions
+
+
+# Load Deer E. cervi example
+
+```{r load-DeerEcervi}
+source(file.path("..", "examples", "DeerEcervi", "load_DeerEcervi.R"), 
+       chdir = TRUE)
+set.seed(123)
+DEmodel <- nimbleModel(DEcode,
+                        constants = DEconstants,
+                        data = list(Ecervi_01 = DeerEcervi$Ecervi_01),
+                        inits = DEinits())
+```
+
+# Design of `nimble`'s MCMC system
+
+
+Here is a figure of MCMC configuration and MCMCs:[nimble_MCMC_design.pdf](nimble_MCMC_design.pdf)
+
+1. MCMC configuration object: Contains a list of sampler assignments, not actual samplers.
+2. MCMC object: Contains a list of sampler objects.
+
+To write new samplers, we need to understand:
+
+- Two-stage evaluation of nimbleFunctions with setup code.
+- Setup (configuration) rules for using a new MCMC sampler
+- Run-time rules for management of model calculations and saved states.
+- More about nimbleFunction programming.
+
+# Example of MCMC configuration object
+
+Look at MCMC configuration object for just a few nodes
+```{r}
+mcmcConf <- configureMCMC(DEmodel, nodes = 'farm_effect[1:3]')
+class(mcmcConf)
+ls(mcmcConf)
+fe1_sampler <- mcmcConf$getSamplers("farm_effect[1]")[[1]]
+class(fe1_sampler)
+ls(fe1_sampler)
+fe1_sampler$target
+fe1_sampler$control
+```
+
+# What happens from an MCMC configuration object?
+
+
+Eventually, an MCMC sampler object is created by a call like this (for adaptive random-walk MH):
+```{r, eval=FALSE}
+sampler_RW(model, mvSaved, target, control)
+```
+
+- This is stage one of two-stage evaluation.  It instantiates an object of a `sampler_RW` class.
+- `model` is the model
+- `mvSaved` is a `modelValues` object for keeping a set of saved model states. (more later)
+- `target` is a vector of target node names
+- `control` is a list of whatever sampler-specific configuration settings are needed.
+
+
+# More about nimbleFunctions
+
+- Without setup code, a `nimbleFunction` becomes an R function (uncompiled) and a C++ function (compiled).
+- With setup code, a `nimbleFunction` becomes an R reference class definition (uncompiled) and a C++ class definition (compiled).
+    - `nimbleFunction` returns a generator (aka constructor, aka initializer) of new class objects.
+
+### nimbleFunction class definitions (i.e., with setup code)
+
+- `setup` is always executed in R.
+    - Typically one-time, high-level processing such as querying model structure.
+- `run` and other methods can be run uncompiled (in R) or compiled (via C++).
+    - Typically repeated "actual algorithm" calculations such as MCMC sampler updates.
+    - Can operate models.
+- Any objects (e.g. `calcNodes` and `model`) in `setup` can be used in `run`.
+    - Internally, these are automatically set up as class member data.
+    - You do not need to explicitly declare class member data.
+    - Nodes used in model operations are "baked in" (aka partially evaluated) during compilation. 
+        - Node vectors must be created in setup code and used in run code.
+        - They can't be dynamically modified in run code.
+
+# A basic Random-Walk Metropolis-Hastings sampler
+
+```{r}
+ourMH <- nimbleFunction(
+  name = 'ourMH',                              # Convenient for class name of R reference class and generated C++ class
+  contains = sampler_BASE,                     # There is a simple class inheritance system.
+  setup = function(model, mvSaved, target, control) {                 # REQUIRED setup arguments
+    scale <- if(!is.null(control$scale)) control$scale else 1         # Typical extraction of control choices
+    calcNodes <- model$getDependencies(target)                        # Typical query of model structure
+  },                                                                  # setup can't return anything
+  run = function() {
+    currentValue <- model[[target]]                                   # extract current value
+    currentLogProb <- model$getLogProb(calcNodes)                     # get log "denominator" from cached values
+    proposalValue <- rnorm(1, mean = currentValue, sd = scale)        # generate proposal value
+    model[[target]] <<- proposalValue                                 # put proposal value in model
+    proposalLogProb <- model$calculate(calcNodes)                     # calculate log "numerator" 
+    logAcceptanceRatio <- currentLogProb - proposalLogProb            # log acceptance ratio
+    # Alternative:
+    # logAcceptanceRatio <- model$calculateDiff(calcNodes)
+    accept <- decide(logMHR)                                          # utility function to generate accept/reject decision
+    if(accept)                                                        # accept synchronize model -> mvSaved
+      copy(from = model, to = mvSaved, row = 1, nodes = calcNodes, logProb = TRUE)
+    else                                                              # reject: synchronize mvSaved -> model
+      copy(from = mvSaved, to = model, row = 1, nodes = calcNodes, logProb = TRUE)
+  },
+  methods = list(                              # required method for sampler_BASE base class
+    reset = function() {}
+  )
+)
+```
+
+# Rules for each sampler
+
+### setup function
+  
+- The four arguments, named exactly as shown, are required.  This allows `buildMCMC` to create any sampler correctly.
+
+### run function
+
+- The `mvSaved` ("modelValues saved") has a saved copy of all model variables and log probabilities
+- Upon entry, `run()` can assume:
+    - the model is fully calculated (so `getLogProb` and `calculateDiff` make sense).
+    - `mvSaved` and the model are synchronized (have the same values).
+- Upon exit, `run()` must ensure those conditions are met.
+    - That way the next sampler can operator correctly.
+- Between entry and exit, `run()` can manipulate the model in any way necessary.
+
+### reset function
+
+- To match the `sampler_BASE` definition, all samplers must have a `reset()` function.
+
+
+# Stepping through uncompiled execution
+
+
+Version with `browser()`s
+
+```{r}
+ourMH_debug <- nimbleFunction(
+  name = 'ourMH_debug',
+  contains = sampler_BASE,
+  setup = function(model, mvSaved, target, control) {
+    browser()
+    scale <- if(!is.null(control$scale)) control$scale else 1 
+    calcNodes <- model$getDependencies(target)                
+  },                                                          
+  run = function() {
+    browser()
+    currentValue <- model[[target]]                           
+    currentLogProb <- model$getLogProb(calcNodes)             
+    proposalValue <- rnorm(1, mean = currentValue, sd = scale)
+    model[[target]] <<- proposalValue                             
+    proposalLogProb <- model$calculate(calcNodes)             
+    logAcceptanceRatio <- currentLogProb - proposalLogProb    
+    accept <- decide(logMHR)                                     
+    if(accept)                                                   
+      copy(from = model, to = mvSaved, row = 1, nodes = calcNodes, logProb = TRUE)
+    else                                                         
+      copy(from = mvSaved, to = model, row = 1, nodes = calcNodes, logProb = TRUE)
+  },
+  methods = list(                              
+    reset = function() {}
+  )
+)
+```
+
+# Stepping through uncompiled execution
+
+```{r}
+mcmcConf <- configureMCMC(DEmodel, nodes = NULL) ## Make an empty configuration
+mcmcConf$addSampler(type = "ourMH_debug", target = 'farm_effect[1]')
+```
+
+```{r, eval=FALSE}
+# run this on your own to step through in debug (browser) mode.
+mcmc <- buildMCMC(mcmcConf)
+mcmc$run(5)
+```
+
+# Let's modify the basic RW sampler
+
+A user wrote to nimble-users recently asking how to do MCMC sampling on subsets of a multivariate node, e.g., for missing data applications.
+
+Unfortunately, `nimble` is not set up to do this. The user took our basic RW sampler and modified it for his need.
+
+Let's open up [`MCMC_samplers.R`](https://github.com/nimble-dev/nimble/blob/devel/packages/nimble/R/MCMC_samplers.R) (and search for `sampler_RW`), so we can have the basic sampler in front of us.
+
+Let's suppose we have this basic model with a node, say `y[1:3]` and `y[2]` is missing.
+
+`nimble` easily handles nodes that are missing (assigning an MCMC sampler to them) but not multivariate nodes that are a mix of missing and non-missing. But we can work around that. 
+
+```{r}
+code <- nimbleCode({
+     y[1:n] ~ dmnorm(mu[1:n], cov = Sigma[1:n, 1:n])
+})
+n <- 3
+mu <- rep(0, n)
+Sigma <- matrix(c(1, .9, -.7, .9, 1, -.6, -.7, -.6, 1), 3, 3)
+Sigma
+
+y <- c(0.2, NA, -0.5)
+yFull <- y
+yFull[2] <- 0
+model <- nimbleModel(code, inits = list(y = yFull),
+  constants = list(n = n, mu = mu, Sigma = Sigma))
+conf <- configureMCMC(model, nodes = NULL)
+# conf$addSampler(target = '???', type = 'conditional_RW', control = list(???))
+```
+
+- What information do we need from the user to set up the sampler?
+- What do we need to do in the run code to sample `y[2]`?
+   - Note: when we call `calculate`, we need to calculate the multivariate density of `y[1:5]`
+
+# A sampler for an element of a multivariate node
+
+Let's see [the sampler the user came up with](conditional_RW.R).
+
+The key pieces are:
+
+```
+#### from setup code:
+
+        ## set incorrect defaults so that it throws an error if not explicitly set
+        index               <- extractControlElement(control, 'index',               1:2)
+
+        ## checks on index
+        if(length(index) != 1) stop('length of index must be 1')
+        if(index < 1 | index > d) stop('index must be within number of dimensions of target')
+
+#### from run code:
+
+        currentValue <- model[[target]]
+        propValue <- model[[target]]
+        propLogScale <- 0
+        if(logScale) { 
+            propLogScale <- rnorm(1, mean = 0, sd = scale)
+            propValue[index] <- currentValue[index] * exp(propLogScale)
+        } else {
+            propValue[index] <- rnorm(1, mean = currentValue[index],  sd = scale)
+        }
+        model[[target]] <<- propValue
+```
+
+# Using the new sampler
+
+Using the new sampler in `nimble` is easy.
+
+```{r, fig.width=8, fig.height=4, fig.cap=''}
+source('conditional_RW.R')
+index <- which(is.na(y))
+conf$addSampler(target = 'y[1:3]', type = 'conditional_RW', control = list(index = index))
+mcmc <- buildMCMC(conf)
+
+cModel <- compileNimble(model)
+cmcmc <- compileNimble(mcmc, project = model)
+
+samples <- runMCMC(cmcmc, niter = 1000)
+head(samples)
+par(mfrow = c(1,2))
+ts.plot(samples[ , index] )
+hist(samples[ , index])
+```
+
+# Let's make an interesting sampler (1)
+
+Let's work on a more involved case where we can't make such simple modifications to an existing sampler.
+
+We'll put the pieces together for the E. cervi example as follows:
+
+- Use the original parameterization.
+- Write a sampler that proposes to add $\delta \sim N(0, \mbox{scale})$ to the two sex-specific intercepts and to subtract the same $\delta$ from every `farm_effect[i]` ($i = 1 \ldots 24$).
+- This is a scalar sampler in rotated coordinates.
+- The coordinate transformation is linear, so there is no determinant of a Jacobian matrix to incorporate.  In general one needs to be careful to use distribution theory correctly if non-linear coordinate transformations are involved.  We are covering the software, not the math.
+- We want proposal scale to be adaptive (self-tuning as the MCMC proceeds).  We will just copy from NIMBLE's `sampler_RW` to implement that.
+
+
+# Let's make an interesting sampler (2)
+
+
+```{r}
+ourSampler <- nimbleFunction(
+  name = 'ourSampler',
+  contains = sampler_BASE,
+  setup = function(model, mvSaved, target, control) {
+    ## control list extraction
+    offsetNodes <- control$offsetNodes
+    if(is.null(offsetNodes)) stop("Must provide offsetNodes in control list")
+    adaptive            <- if(!is.null(control$adaptive))            control$adaptive            else TRUE
+    adaptInterval       <- if(!is.null(control$adaptInterval))       control$adaptInterval       else 20 #
+    adaptFactorExponent <- if(!is.null(control$adaptFactorExponent)) control$adaptFactorExponent else 0.8
+    scale               <- if(!is.null(control$scale))               control$scale               else 1
+    ## calculation nodes
+    calcNodes <- model$getDependencies(c(target, offsetNodes))
+    ## variables for adaptation
+    scaleOriginal <- scale
+    timesRan      <- 0
+    timesAccepted <- 0
+    timesAdapted  <- 0
+    optimalAR     <- 0.44
+    gamma1        <- 0
+  },
+  run = function() {
+    currentTargetValues <- values(model, target)
+    currentOffsetNodeValues <- values(model, offsetNodes)
+    proposalShift <- rnorm(1, mean = 0, sd = scale)
+    proposalTargetValues <- currentTargetValues + proposalShift
+    proposalOffsetNodeValues <- currentOffsetNodeValues - proposalShift
+    values(model, target) <<- proposalTargetValues
+    values(model, offsetNodes) <<- proposalOffsetNodeValues
+    logMetropolisHastingsRatio <- calculateDiff(model, calcNodes)
+    accept <- decide(logMetropolisHastingsRatio)
+    if(accept) nimCopy(from = model, to = mvSaved, row = 1, nodes = calcNodes, logProb = TRUE)
+    else     nimCopy(from = mvSaved, to = model, row = 1, nodes = calcNodes, logProb = TRUE)
+    if(adaptive)     adaptiveProcedure(accept)
+  },
+  methods = list(
+    adaptiveProcedure = function(accepted = logical()) {
+      timesRan <<- timesRan + 1
+      if(accepted)     timesAccepted <<- timesAccepted + 1
+      if(timesRan %% adaptInterval == 0) {
+        acceptanceRate <- timesAccepted / timesRan
+        timesAdapted <<- timesAdapted + 1
+        gamma1 <<- 1/((timesAdapted + 3)^adaptFactorExponent)
+        gamma2 <- 10 * gamma1
+        adaptFactor <- exp(gamma2 * (acceptanceRate - optimalAR))
+        scale <<- scale * adaptFactor
+        timesRan <<- 0
+        timesAccepted <<- 0
+      }
+    },
+    reset = function() {
+      scale <<- scaleOriginal
+      timesRan      <<- 0
+      timesAccepted <<- 0
+      timesAdapted  <<- 0
+      gamma1 <<- 0
+    }
+  )
+)
+```
+
+# Let's make an interesting sampler (3)
+
+Configure and build the MCMC.
+
+```{r}
+mcmcConf <- configureMCMC(DEmodel)
+mcmcConf$addSampler(target = c('sex_int'),
+                    type = ourSampler,
+                    control = list(offsetNodes = 'farm_effect'))
+mcmc <- buildMCMC(mcmcConf)
+```
+
+# Accessing more information from a sampler
+
+One might be interested in  accessing compiled internals.  Here is code from an on-the-fly example.
+
+```{r}
+## Make compiled model
+cDEmodel <- compileNimble(DEmodel)
+## Set internal option to access compiled samplers inside of compiled mcmc below
+nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
+## Compile the MCMC
+cmcmc <- compileNimble(mcmc)
+## See that the run function is an interface to compiled code via .Call
+cmcmc$run
+## See where our sampler of interest is in the sampler configuration list
+mcmcConf$printSamplers()
+## And see that the built and compiled samplerFunctions are in the same order
+cmcmc$samplerFunctions
+## Run the MCMC (could use runMCMC(cmcmc, ...) instead, but time=TRUE is not available via runMCMC)
+cmcmc$run(niter = 1000, time = TRUE)
+## Access various internals.  Note that some of these have been reset after adaptation steps.
+cmcmc$samplerFunctions[[30]]$timesAdapted
+cmcmc$samplerFunctions[[30]]$timesAccepted
+cmcmc$samplerFunctions[[30]]$scale
+cmcmc$samplerFunctions[[30]]$timesRan
+## Look at farm_effect in the compiled model
+cDEmodel$farm_effect
+## Run our sampler 100 times
+for(i in 1:100) cmcmc$samplerFunctions[[30]]$run()
+## See if there were any updates
+cDEmodel$farm_effect
+## See how to look at the mvSaved object from the compiled MCMC
+## (There are more direct ways to access values in mvSaved. See modelValues
+## documentation.)
+## This would show the full object: as.matrix(cmcmc$mvSaved)
+## This is what I was looking for in the live session:
+cmcmc$mvSaved[['farm_effect']]
+## See time spent in each sampler (this will not include the 100 iterations
+## we did "by hand", only iterations via cmcmc$run(), or runMCMC, which calls
+## cmcmc$run).
+cmcmc$getTimes()
+```
+
+
+# Let's make an interesting sampler (4)
+
+Run and compare.
+
+```{r, eval=(has_compareMCMCs & generate_orig_results)}
+set.seed(123)
+DEinits_vals <- DEinits()
+mcmcResults_ourSamples <- compareMCMCs(
+  modelInfo = list(code = DEcode, 
+                   data = list(Ecervi_01 = DeerEcervi$Ecervi_01),
+                   constants = DEconstants, # centered
+                   inits = DEinits_vals),
+  ## monitors ## Use default monitors: top-level parameters
+  MCMCs = c('nimble',
+            'nimble_custom'),
+  nimbleMCMCdefs = list(
+    nimble_custom = function(model) {
+      mcmcConf <- configureMCMC(model)
+      mcmcConf$addSampler(target = c('sex_int'),
+                          type = ourSampler,
+                          control = list(offsetNodes = 'farm_effect'))
+      mcmcConf                         # Output should be an MCMC configuration 
+    }
+  ),
+  MCMCcontrol = list(niter = 20000, burnin = 1000)
+)
+```
+```{r, echo=FALSE, eval=(has_compareMCMCs & generate_orig_results)}
+# This is for the original results.
+# Run the next one if you want to run it yourself.
+make_MCMC_comparison_pages(mcmcResults_ourSamples, modelName = "orig_custom_sampler_results")
+```
+
+```{r, eval=FALSE}
+# Run this to generate comparison pages on your machine.
+make_MCMC_comparison_pages(mcmcResults_ourSamples, modelName = "custom_sampler_results")
+```
+
+Results that come with this module are [here](orig_custom_sampler_results.html)
+
+Results if you run it yourself are [here](custom_sampler_results.html)
+
+# Introduction to `modelValues`
+
+- A `modelValues` class does the job of holding multiple sets of values of 
+    - model variables and
+    - log probabilities ("logProbs") of stochastic nodes.
+- We think of each set of values as a "row".
+- `modelValues` classes are like `nimbleFunctions` in that:
+    - They can be compiled.
+    - They should work the same way compiled and uncompiled.
+- MCMC output is stored in a `modelValues` object (called `mvSamples`).
+- Each `modelValues` class comes from a configuration of what variables are needed (and their types and sizes).
+    - Typically the configuration is generated from a model or from variables monitored in MCMC.
+    - (Actually, one can hand-configure a `modelValues` in any way one wants.)
+- MCMC uses one `modelValues` object configured for **all** model variables and logProbs.
+    - Only a single "row" is needed.
+- This is the `mvSaved` and must be synchronized with the model at entry and exit of each sampler.
+
+# Recall our use of modelValues in samplers and MCMCs
+
+We used a "1-row" modelValues called `mvSaved` that has the current state of the model.
+
+```{r, eval=FALSE}
+if(jump) {
+  nimCopy(from = model, to = mvSaved, row = 1, nodes = target, logProb = TRUE)
+  nimCopy(from = model, to = mvSaved, row = 1, nodes = calcNodesNoSelfDeterm, logProb = FALSE)
+  nimCopy(from = model, to = mvSaved, row = 1, nodes = calcNodesNoSelfStoch, logProbOnly = TRUE)
+} else {
+  nimCopy(from = mvSaved, to = model, row = 1, nodes = target, logProb = TRUE)
+  nimCopy(from = mvSaved, to = model, row = 1, nodes = calcNodesNoSelfDeterm, logProb = FALSE)
+  nimCopy(from = mvSaved, to = model, row = 1, nodes = calcNodesNoSelfStoch, logProbOnly = TRUE)
+}
+```
+
+In the overall MCMC we use a modelValues called `mvSamples` with as many rows as saved iterations that stores the posterior samples for the monitored nodes.
+
+```{r, eval=FALSE}
+resize(mvSamples,  mvSamples_copyRow  + floor((niter-nburnin) / thinToUseVec[1]))
+nimCopy(from = model, to = mvSamples,  row = mvSamples_copyRow,  nodes = monitors)
+```
+
+We'll see more use of modelValues in the next examples on using nimbleFunctions for post-processing.
+
+# nimbleFunctions for post-processing: posterior predictive checks
+
+One standard posterior predictive check is to assess (graphically/informally or formally) whether simulated data from the posterior predictive distribution are similar to the actual data.
+
+We could do this by adding additional 'pseudo-data' nodes to the model, but this will slow down the overall MCMC.
+
+Often we want to do this sort of thing after the MCMC is run, using the samples from the posterior.
+
+Suppose we want to simulate many datasets from the posterior predictive distribution. What do we need to do?
+
+ - Run the MCMC, monitoring all nodes that are parents of the data nodes
+ - Iterate through the posterior samples and:
+    - Put them in the model
+    - Simulate new datasets
+    - Store the simulated datasets
+ - Carry out our assessment
+
+Note, we could do this fully in R, without using any compiled operations. We could also do this mostly in R but use the compiled model. Either can be fine and using a compiled nimbleFunction may only matter if these other approaches are too slow.
+
+# nimbleFunction for posterior predictive simulation
+
+
+
+# later
+
+```
+nodes <- cmcmc$mvSamples$getVarNames()
+values(m, nodes) <- samples[i, ]
+```

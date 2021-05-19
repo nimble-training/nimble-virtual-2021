@@ -123,7 +123,7 @@ calcDeps_regr$run()
 - With setup code, a `nimbleFunction` becomes an R reference class definition (uncompiled) and a C++ class definition (compiled).
     - `nimbleFunction` returns a generator (aka constructor, aka initializer) of new class objects.
 
-nimbleFunction class definitions (i.e with setup code):
+nimbleFunction class definitions (i.e., with setup code):
 
 - `setup` is always executed in R.
     - Typically one-time, high-level processing such as querying model structure.
