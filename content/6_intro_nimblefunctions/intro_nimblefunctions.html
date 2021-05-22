@@ -183,7 +183,7 @@ calcDeps_regr<span class="op">$</span><span class="kw">run</span>()</code></pre>
 <li><code>nimbleFunction</code> returns a generator (aka constructor, aka initializer) of new class objects.</li>
 </ul></li>
 </ul>
-<p>nimbleFunction class definitions (i.e with setup code):</p>
+<p>nimbleFunction class definitions (i.e., with setup code):</p>
 <ul>
 <li><code>setup</code> is always executed in R.
 <ul>
@@ -250,8 +250,9 @@ cRegrModel &lt;-<span class="st"> </span><span class="kw">compileNimble</span>(r
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">cObjective &lt;-<span class="st"> </span><span class="kw">compileNimble</span>(rObjective, <span class="dt">project =</span> regrModel)</code></pre></div>
 <pre><code>## compiling... this may take a minute. Use 'showCompilerOutput = TRUE' to see C++ compilation details.
 ## compilation finished.</code></pre>
-<p>Now let’s try using it.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">system.time</span>(optR &lt;-<span class="st"> </span><span class="kw">optim</span>(<span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>), rObjective<span class="op">$</span>run, <span class="dt">control =</span> <span class="kw">list</span>(<span class="dt">fnscale =</span> <span class="dv">-1</span>)))</code></pre></div>
+<p>Now let’s try using it. Any thoughts why the warnings occur?</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">set.seed</span>(<span class="dv">1</span>)
+<span class="kw">system.time</span>(optR &lt;-<span class="st"> </span><span class="kw">optim</span>(<span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>), rObjective<span class="op">$</span>run, <span class="dt">control =</span> <span class="kw">list</span>(<span class="dt">fnscale =</span> <span class="dv">-1</span>)))</code></pre></div>
 <pre><code>## Warning in dnorm(model$y[getNodeFunctionIndexedInfo(INDEXEDNODEINFO_,
 ## 1)], : NaNs produced
 
@@ -552,10 +553,10 @@ cRegrModel &lt;-<span class="st"> </span><span class="kw">compileNimble</span>(r
 ## Warning in dnorm(model$y[getNodeFunctionIndexedInfo(INDEXEDNODEINFO_,
 ## 1)], : NaNs produced</code></pre>
 <pre><code>##    user  system elapsed 
-##   7.389   0.003   7.391</code></pre>
+##   7.301   0.004   7.305</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">system.time</span>(optC &lt;-<span class="st"> </span><span class="kw">optim</span>(<span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>), cObjective<span class="op">$</span>run, <span class="dt">control =</span> <span class="kw">list</span>(<span class="dt">fnscale =</span> <span class="dv">-1</span>)))</code></pre></div>
 <pre><code>##    user  system elapsed 
-##   0.002   0.000   0.002</code></pre>
+##   0.003   0.000   0.002</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">optR</code></pre></div>
 <pre><code>## $par
 ## [1] 0.2551346 0.5781320 0.2329039

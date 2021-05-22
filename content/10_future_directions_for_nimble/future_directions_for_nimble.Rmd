@@ -40,8 +40,8 @@ Automatic differentiation
 - We plan to implement
     - Hamiltonian Monte Carlo: It works!
     - Langevin sampler: It works!
-    - Laplace approximation: It is drafted!
-    - Caveat: These are all complex methods and there is lots of testing, debugging, and efficiency improvement to do.
+    - Laplace approximation: It works!
+    - Caveat: These are all complex methods and there is still some testing, debugging, and efficiency improvement to do.
 - Capability to access derivatives for "arbitrary" (within sense) nimbleFunctions and for subsets of model calculations will enable a lot of flexible algorithm development.
 
 nCompiler

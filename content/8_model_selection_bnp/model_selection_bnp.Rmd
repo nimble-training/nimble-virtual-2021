@@ -194,14 +194,14 @@ The better WAIC for the full model is not suprising given what we saw in the pos
 
 # WAIC can be tricky
 
- - There are different variations on WAIC depending on what predictive distribution is of interest. E.g.,
+ - There are different variations on WAIC depending on what predictive distribution is of interest:
  
-    - New observations
-    - New groups (often represented as a new random effect)
- - The variation used depends on what is monitored in the MCMC (because we need samples of everything considered a parameter)
-    - For new observations, you want to monitor all parameters, which is NOT the NIMBLE MCMC default.
+    - New observations (conditional WAIC, available now in NIMBLE)
+    - New groups (often represented as a new random effect) (marginal WAIC, to be available in version 0.12.0)
 
- - WAIC relies on being able to partition the data into `n` pieces; not clear how to use for spatial or temporally-correlated data
+ - WAIC relies on being able to partition (group) the data into `n` pieces; not clear how to use for spatial or temporally-correlated data
+    - Currently, observations are treated individually (not grouped), unless you use a multivariate distribution
+    - In NIMBLE version 0.12.0 you'll be able to group the data as desired, e.g., grouping all temporal observations for each patient in a longitudinal study
 
 * See Gelman, A., J. Hwang, and A. Vehtari. 2014. “Understanding Predictive Information Criteria for Bayesian Models.” Statistics and Computing 24 (6): 997–1016.
 
@@ -433,7 +433,7 @@ conf = configureMCMC(model, print = TRUE)
 # BNP: more details
 
  - We also provide tools for using the stick-breaking representation of a Dirichlet process model.
- - In the next nimble version (0.10.0) we'll provide more flexibility for clustering multiple values at a time.
+ - As of nimble version 0.10.0 [we provide more flexibility for clustering multiple values at a time](https://r-nimble.org/nimbleExamples/bnp_multivariate.html).
    - E.g., clustering time series without having to use multivariate distributions.
  - `getSamplesDPmeasure()` will transform the MCMC output to give samples from the unknown density.
  

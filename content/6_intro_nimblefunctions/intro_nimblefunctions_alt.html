@@ -309,7 +309,7 @@ calcDeps_regr$run()</code></pre>
 <li><code>nimbleFunction</code> returns a generator (aka constructor, aka initializer) of new class objects.</li>
 </ul></li>
 </ul>
-<p>nimbleFunction class definitions (i.e with setup code):</p>
+<p>nimbleFunction class definitions (i.e., with setup code):</p>
 <ul>
 <li><code>setup</code> is always executed in R.
 <ul>
@@ -376,8 +376,9 @@ cRegrModel &lt;- compileNimble(regrModel)   # remember to compile model first</c
 <pre class="r"><code>cObjective &lt;- compileNimble(rObjective, project = regrModel)</code></pre>
 <pre><code>## compiling... this may take a minute. Use 'showCompilerOutput = TRUE' to see C++ compilation details.
 ## compilation finished.</code></pre>
-<p>Now let’s try using it.</p>
-<pre class="r"><code>system.time(optR &lt;- optim(c(0, 0, 1), rObjective$run, control = list(fnscale = -1)))</code></pre>
+<p>Now let’s try using it. Any thoughts why the warnings occur?</p>
+<pre class="r"><code>set.seed(1)
+system.time(optR &lt;- optim(c(0, 0, 1), rObjective$run, control = list(fnscale = -1)))</code></pre>
 <pre><code>## Warning in dnorm(model$y[getNodeFunctionIndexedInfo(INDEXEDNODEINFO_,
 ## 1)], : NaNs produced
 
@@ -678,7 +679,7 @@ cRegrModel &lt;- compileNimble(regrModel)   # remember to compile model first</c
 ## Warning in dnorm(model$y[getNodeFunctionIndexedInfo(INDEXEDNODEINFO_,
 ## 1)], : NaNs produced</code></pre>
 <pre><code>##    user  system elapsed 
-##   7.394   0.000   7.394</code></pre>
+##   7.415   0.000   7.415</code></pre>
 <pre class="r"><code>system.time(optC &lt;- optim(c(0, 0, 1), cObjective$run, control = list(fnscale = -1)))</code></pre>
 <pre><code>##    user  system elapsed 
 ##   0.002   0.000   0.002</code></pre>
