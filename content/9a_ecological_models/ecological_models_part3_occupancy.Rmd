@@ -1,0 +1,64 @@
+---
+title: "Ecological models in NIMBLE: Occupancy"
+subtitle: "NIMBLE 2021 Virtual Workshop"
+author: "NIMBLE Development Team"
+date: "May 2021"
+output:
+  slidy_presentation: default
+  beamer_presentation: default
+---
+<style>
+slides > slide {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval=FALSE)
+library(nimble)
+```
+
+Occupancy models in `nimbleEcology`
+=====
+
+- `probOcc` = probability the site is occupied
+- `probDetect[t]` = detection probability at time t.
+
+### Variants
+
+- `dOcc_s`: time-independent (scalar) detection probability
+- `dOcc_v`: time-varying (vector) detection probability
+
+### Example
+
+```{r, eval=FALSE}
+y[i, 1:T] ~ dOcc_v(probOcc = psi[i], 
+                   probDetect = p[i, 1:T], len = T)
+```
+
+- `i` indexes site.
+
+Dynamic occupancy models in `nimble`
+=====
+
+- `probPersist[t]` = persistence probability (occupied $\rightarrow$ occupied)
+- `probColonize[t]` = colonization probability (unoccupied $\rightarrow$ occupied)
+- `p[t, k]` = detection probability in year (primary) t, sampling visit k (secondary occasion)
+- `start[t]` = first sampling occasion in year t.
+- `end[t]` = last sampling occasion in year t.
+
+### Variants
+
+- `dDynOcc_[s|v][s|v][s|v|m]`
+- first `[s|v]` is for persistence probability (time-independent or time-varying)
+- second `[s|v]` is for colonization probability (time-independent or time-varying)
+- third `[s|v|m]` is for detection probability (time-independent, time-varying, or time-visit-varying)
+
+### Example
+
+```{r, eval=FALSE}
+y[1:num_sites, 1:num_years] ~ dDynOcc_svv(probPersist = psi, 
+                                          probColonize = gamma[1:num_years],
+                                          p = p[1:num_years])
+```

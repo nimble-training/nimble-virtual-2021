@@ -1,0 +1,305 @@
+---
+title: "Ecological models in NIMBLE: Capture-recapture"
+subtitle: "NIMBLE 2021 Virtual Workshop"
+author: "NIMBLE Development Team"
+date: "May 2021"
+output:
+  slidy_presentation: default
+  beamer_presentation: default
+---
+<style>
+slides > slide {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+has_nimbleEcology <- require(nimbleEcology)
+if(!has_nimbleEcology)
+  message("This module will use nimbleEcology, which you don't have installed.")
+doDHMMexample <- FALSE
+```
+
+Agenda
+=====
+
+In this module we will cover a variety of distributions and strategies relevant for ecological models.  These include:
+
+1. Cormack-Jolly-Seber (CJS) capture-recapture models
+2. Multi-state and multi-event capture-recapture models (Hidden Markov Models)
+3. Occupancy models
+4. Dynamic occupancy models
+5. N-mixture models
+6. Spatial capture-recapture (SCR) models
+
+Distributions that marginalize over latent states are available for the first five of these in the [`nimbleEcology` (Goldstein et al. 2020)](https://CRAN.R-project.org/package=nimbleEcology) package.
+
+Examples of occupancy, dynamic occupancy, and N-mixture models are given in [*One size does not fit all: Customizing MCMC methods for hierarchical models using NIMBLE* (Ponisio et al. 2020)](https://onlinelibrary.wiley.com/doi/full/10.1002/ece3.6053).
+
+Examples of CJS and HMM are given in [*Efficient Markov chain Monte Carlo sampling for hierarchical hidden Markov models* (Turek et al. 2016)](https://link.springer.com/article/10.1007/s10651-016-0353-z).
+
+Examples of SCR are given in [*Efficient Estimation of Large-Scale Spatial Capture-Recapture Models* (Turek et al. 2020, bioRxiv preprint)](https://www.biorxiv.org/content/10.1101/2020.05.07.081182v1).  Code for these is (mostly) in the Appendix but is not yet curated into a package.
+
+Some SCR steps are given in [*A local evaluation of the individual state-space to scale up Bayesian spatial capture-recapture* (Milleret et al. 2019). Ecology and Evolution 9:352–363](https://onlinelibrary.wiley.com/doi/full/10.1002/ece3.4751)
+
+We will go through some of the methods and results of these papers.
+
+We will focus on the code.  For `nimbleEcology`, the math related to the code is summarized in the [package vignette](https://cran.r-project.org/web/packages/nimbleEcology/vignettes/Introduction_to_nimbleEcology.html).
+
+Cormack-Jolly-Seber (CJS) capture-recapture
+=====
+
+Dipper example:
+
+* 294 Dippers monitored 1981-1987.
+* One of the most classic capture-recapture teaching datasets ever.
+* Thanks to Olivier Gimenez and Daniel Turek for Dipper examples from previous workshops.
+
+Load the data
+=====
+```{r load_dipper} 
+dipper_example_dir <- here::here("content", "examples","Dipper")
+dipper <- read.csv(file.path(dipper_example_dir,"dipper.csv"))
+y <- as.matrix(dipper[ , 1:7])
+first <- apply(y, 1, function(x) min(which(x !=0)))
+y <- y[ first != 7, ]
+y_orig <- y # Keep an "original version" for use below
+head(y)
+```
+
+Dipper example: Most basic version
+=====
+
+- Data for one individual are a capture history: `y[i, 1:T]` = $[1, 0, 1, 1, 0, 0]$.
+- First entry must be `1` because CJS conditions on first capture.
+- True alive/dead (latent) states: `z[i, 1:T]` = $[1, 1, 1, 1, (0 | 1), (0|1)]$.
+- A basic way to write this in model code with individual latent states is:
+
+```{r dipper_basic}
+dipper_code_basic <- nimbleCode({
+  phi ~ dunif(0, 1) # survival prior
+  p ~ dunif(0, 1)   # detection prior
+  # likelihood
+  for (i in 1:N){
+    z[i,first[i]] <- 1
+    for (t in (first[i]+1):T){
+      z[i,t] ~ dbern(phi * z[i,t-1]) # z = 0 for dead, 1 for alive
+      y[i,t] ~ dbern(p * z[i,t])     # y = 0 for not-observed, 1 for observed
+    }}
+  })
+```
+
+Inputs for basic version
+=====
+```{r setupInputs}
+first <- apply(y_orig, 1, function(x) min(which(x !=0)))
+dipper_constants <- list(N = nrow(y), 
+                         T = ncol(y_orig), 
+                         first = first)
+dipper_data <- list(y = y_orig)   # 0s and 1s
+zinits <- y_orig                  # 0s and 1s
+dipper_inits <- function() list(phi = runif(1,0,1),
+                                  p = runif(1,0,1),
+                                  z = zinits)
+head(zinits)
+```
+
+Run basic version
+=====
+```{r}
+samples <- nimbleMCMC(dipper_code_basic, dipper_constants, dipper_data,
+                      dipper_inits(), samplesAsCodaMCMC = TRUE)
+```
+
+Dipper basic model: results
+=====
+
+```{r}
+plot(samples)
+```
+
+Dipper basic model: results
+=====
+
+- We got lucky and got away with invalid initial values for `z`.
+- These were set to `y`, so they had dead birds come alive again, giving the logProb warnings.
+- Actually, we shouldn't need to sample latent state of birds known to be alive!
+
+Dipper basic model: slightly better version
+=====
+
+- `z[i, t]` until time of last capture can be provided as data.
+- `z[i, t]` after last capture need to be sampled by MCMC as latent states.
+
+```{r}
+zinits <- y_orig
+y <- y_orig
+zdata <- matrix(NA, nrow = nrow(y), ncol = ncol(y))
+for(i in 1:nrow(zinits)) {
+  known_alive <- range(which(zinits[i,] == 1))
+  zinits[i, known_alive[1] : known_alive[2] ] <- NA
+  zdata[i, known_alive[1] : known_alive[2] ] <- 1
+}
+head(zinits)
+head(zdata)
+```
+
+Run slightly better version:
+======
+
+```{r}
+dipper_data$z <- zdata
+dipper_inits <- function() list(phi = runif(1,0,1),
+                                p = runif(1,0,1),
+                                z = zinits)
+samples <- nimbleMCMC(dipper_code_basic, dipper_constants, dipper_data,
+                      dipper_inits(), samplesAsCodaMCMC = TRUE)
+# This will run a bit faster.
+```
+
+Dipper example: Conventional more general version as HMM
+=====
+
+* Start to set up a general hidden Markov model using categorical distributions.
+* y: 1 = not-detected, 2 = detected.
+* z: 1 = alive, 2 = dead. (This flips the order from above, but in often "dead" is the last state.)
+* Modified from Gimenez et al. capture-recapture workshop
+
+```{r dipper_code_dcat}
+dipper_code_dcat <- nimbleCode({
+  phi ~ dunif(0, 1) # prior survival
+  p ~ dunif(0, 1) # prior detection
+  # likelihood
+  gamma[1,1:2] <- c(phi, 1-phi)      # Pr(alive t -> alive t+1), Pr(alive t -> dead t+1)
+  gamma[2,1:2] <- c(0, 1)            # Pr(dead t -> alive t+1), Pr(dead t -> dead t+1)
+  delta[1:2] <- c(1, 0)              # Pr(alive t = 1) = 1, Pr(dead t = 1) = 0
+  omega[1,1:2] <- c(1 - p, p)        # Pr(alive t -> non-detected t), Pr(alive t -> detected t)
+  omega[2,1:2] <- c(1, 0)            # Pr(dead t -> non-detected t), Pr(dead t -> detected t)
+  for (i in 1:N){
+    z[i,first[i]] ~ dcat(delta[1:2]) # Illustrates initial state probabilities
+    for (j in (first[i]+1):T){
+      z[i,j] ~ dcat(gamma[z[i,j-1], 1:2])
+      y[i,j] ~ dcat(omega[z[i,j], 1:2])
+    }
+  }
+})
+```
+
+Re-code data to work as indices for categorical distribution
+=====
+```{r}
+dipper_data$y <- y_orig
+dipper_data$y <- dipper_data$y + 1 # 1 = unobserved. 2 = observed.
+zinits_dcat <- zinits
+zinits_dcat[ zinits_dcat == 0] <- 2 # 1 = alive. 2 = dead.
+head(dipper_data$y)
+head(dipper_data$z)  # inits and data for z complement each other
+head(zinits_dcat)
+```
+Run categorical version:
+======
+
+```{r}
+dipper_inits <- function() list(phi = runif(1,0,1),
+                                p = runif(1,0,1),
+                                z = zinits_dcat)
+samples <- nimbleMCMC(dipper_code_dcat, dipper_constants, dipper_data,
+                      dipper_inits(), samplesAsCodaMCMC = TRUE)
+```
+
+Results from categorical version:
+=====
+
+```{r}
+plot(samples)
+```
+
+Dipper example: use dCJS marginal distribution
+=====
+
+- `nimbleEcology` alternative way to write this:
+```{r dipper_code_dCJS}
+dipper_code_dCJS <- nimbleCode({
+  phi ~ dunif(0, 1) # survival prior
+  p ~ dunif(0, 1)   # detection prior
+  # likelihood
+  for (i in 1:N){
+    y[i, first[i]:T] ~ dCJS_ss(probSurvive=phi, probCapture=p, len=T-first[i]+1)
+  }
+})
+```
+- `_ss` indicates that both `probSurvive` and `probCapture` are scalars.
+
+Run the dCJS version
+=====
+
+```{r}
+dipper_inits <- function() list(phi = runif(1,0,1),
+                                p = runif(1,0,1))
+dipper_data$z <- NULL   # No latent states.
+dipper_data$y <- y_orig # Back to 0 = unobserved, 1 = observed
+samples <- nimbleMCMC(dipper_code_dCJS, dipper_constants, dipper_data,
+                      dipper_inits(), samplesAsCodaMCMC = TRUE)
+```
+See CJS version results
+====
+
+```{r}
+plot(samples)
+```
+
+Trying `dCJS` outside of a model
+=====
+
+* It may help to explore how a distribution works outside of a model.  
+* You can use (and compile) it as a `nimbleFunction` in R.
+
+```{r}
+y <- c(1, 0, 1, 1, 0, 0)
+probSurvive <- c(0.7, 0.6, 0.5, 0.4, 0.3)     # survival from t to t+1
+probCapture <- c(NA, 0.5, 0.7, 0.5, 0.6, 0.4) # capture probability at t
+dCJS_vv(y, probSurvive = probSurvive, probCapture = probCapture)
+# (In a model, we need explicit indexing with [].  Outside of a model, we don't.)
+c_dCJS_vv <- compileNimble(dCJS_vv)
+c_dCJS_vv(y, probSurvive = probSurvive, probCapture = probCapture)
+```
+
+Look at `dCJS_vv` source code
+=====
+
+You can look at a nimbleFunction like any other R function:
+```{r}
+dCJS_vv
+```
+
+Or you can go to the [github repository](https://github.com/nimble-dev/nimbleEcology/tree/master/R)
+
+Debug `dCJS` in a model, as if you were trying to fix some bug
+=====
+```{r, eval=FALSE}
+# Run this code chunk only manually, since it has debugging in it.
+Rmodel <- nimbleModel(dipper_code_dCJS, dipper_constants, dipper_data, dipper_inits())
+Rmcmc <- buildMCMC(Rmodel)
+debugonce(dCJS_ss)
+Rmcmc$run(niter = 4)
+```
+
+Variants of `dCJS_[s|v][s|v]`
+=====
+
+Recall that `nimbleFunction`s require static typing.
+
+Unfortunately:
+
+- scalars are not automatically converted to length-one vectors.
+- vectors are not automatically converted to single-row or single-column matrices.
+
+This means we have implemented variants for `dCJS` (and others) depending on whether parameters are time-varying:
+
+- `dCJS_ss` : both survival and capture are scalars (both time-independent, aka time-constant).
+- `dCJS_sv` : survival is scalar (time-constant) but capture is vector (time-dependent).
+- `dCJS_vs` : survival is vector (time-dependent) but capture is scalar (time-constant).
+- `dCJS_vv` : both are time-dependent.
+

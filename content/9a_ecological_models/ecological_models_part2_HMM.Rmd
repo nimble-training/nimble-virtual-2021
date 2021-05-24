@@ -1,5 +1,5 @@
 ---
-title: "Ecological models in NIMBLE (part 1)"
+title: "Ecological models in NIMBLE: Hidden Markov models"
 subtitle: "NIMBLE 2021 Virtual Workshop"
 author: "NIMBLE Development Team"
 date: "May 2021"
@@ -17,106 +17,12 @@ slides > slide {
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 has_nimbleEcology <- require(nimbleEcology)
+has_compareMCMCs <- require(compareMCMCs)
 if(!has_nimbleEcology)
   message("This module will use nimbleEcology, which you don't have installed.")
-doDHMMexample <- FALSE
+doDHMMexample <- TRUE
 ```
 
-Agenda
-=====
-
-In this module we will cover a variety of distributions and strategies relevant for ecological models.  These include:
-
-1. Cormack-Jolly-Seber (CJS) capture-recapture models
-2. Multi-state and multi-event capture-recapture models (Hidden Markov Models)
-3. Occupancy models
-4. Dynamic occupancy models
-5. N-mixture models
-6. Spatial capture-recapture (SCR) models
-
-Distributions that marginalize over latent states are available for the first five of these in the [`nimbleEcology` (Goldstein et al. 2020)](https://CRAN.R-project.org/package=nimbleEcology) package.
-
-Examples of occupancy, dynamic occupancy, and N-mixture models are given in [*One size does not fit all: Customizing MCMC methods for hierarchical models using NIMBLE* (Ponisio et al. 2020)](https://onlinelibrary.wiley.com/doi/full/10.1002/ece3.6053).
-
-Examples of CJS and HMM are given in [*Efficient Markov chain Monte Carlo sampling for hierarchical hidden Markov models* (Turek et al. 2016)](https://link.springer.com/article/10.1007/s10651-016-0353-z).
-
-Examples of SCR are given in [*Efficient Estimation of Large-Scale Spatial Capture-Recapture Models* (Turek et al. 2020, bioRxiv preprint)](https://www.biorxiv.org/content/10.1101/2020.05.07.081182v1).  Code for these is (mostly) in the Appendix but is not yet curated into a package.
-
-Some SCR steps are given in [*A local evaluation of the individual state-space to scale up Bayesian spatial capture-recapture* (Milleret et al. 2019). Ecology and Evolution 9:352–363](https://onlinelibrary.wiley.com/doi/full/10.1002/ece3.4751)
-
-We will go through some of the methods and results of these papers.
-
-We will focus on the code.  For `nimbleEcology`, the math related to the code is summarized in the [package vignette](https://cran.r-project.org/web/packages/nimbleEcology/vignettes/Introduction_to_nimbleEcology.html).
-
-Cormack-Jolly-Seber marginal distribution
-=====
-
-- Data are a capture history: `y[i,1:T]` = $[1, 0, 1, 1, 0, 0]$.
-- First entry must be `1` because CJS conditions on first capture.
-- A conventional way to write this in model code with individual latent states would be
-```{r, eval=FALSE}
-z[i,1] <- 1
-for(t in 2:T) {
-  z[i,t] ~ dbern(phi[i,t-1] * z[i,t-1])
-  y[i,t] ~ dbern(p[i,t] * z[i,t])
-}
-## Declarations needed for phi[i,t], survival of individual i at time t
-##                     and p[i,t], detection probability of individual i at time t
-```
-
-- `z[i, t]` until time of last capture would be provided as data.
-- `z[i, t]` after last capture would be sampled by MCMC as latent states.
-
-- `nimbleEcology` alternative way to write this:
-```{r, eval=FALSE}
-y[i, 1:T] ~ dCJS_vv(probSurvive = phi[i, 1:(T-1)],
-                    probCapture = p[i, 1:T],
-                    len = T)
-```
-
-- `_vv` indicates that both `probSurvive` and `probCapture` are vectors.
-
-Trying `dCJS` outside of a model
-=====
-
-It may help to explore how a distribution works outside of a model.  You can use (and compile) it as a `nimbleFunction` in R.
-
-```{r}
-y <- c(1, 0, 1, 1, 0, 0)
-probSurvive <- c(0.7, 0.6, 0.5, 0.4, 0.3)     # survival from t to t+1
-probCapture <- c(NA, 0.5, 0.7, 0.5, 0.6, 0.4) # capture probability at t
-dCJS_vv(y, probSurvive = probSurvive, probCapture = probCapture)
-# (In a model, we need explicit indexing with [].  Outside of a model, we don't.)
-c_dCJS_vv <- compileNimble(dCJS_vv)
-c_dCJS_vv(y, probSurvive = probSurvive, probCapture = probCapture)
-```
-
-Look at `dCJS_vv` source code
-=====
-
-You can look at a nimbleFunction like any other R function:
-```{r}
-dCJS_vv
-```
-
-Or you can go to the [github repository](https://github.com/nimble-dev/nimbleEcology/tree/master/R)
-
-Variants of `dCJS_[s|v][s|v]`
-=====
-
-Recall that `nimbleFunction`s require static typing.
-
-Unfortunately:
-
-- scalars are not automatically converted to length-one vectors.
-- vectors are not automatically converted to single-row or single-column matrices.
-
-This means we have implemented variants for `dCJS` (and others) depending on whether parameters are time-varying:
-
-- `dCJS_ss` : both survival and capture are scalars (both time-independent, aka time-constant).
-- `dCJS_sv` : survival is scalar (time-constant) but capture is vector (time-dependent).
-- `dCJS_vs` : survival is vector (time-dependent) but capture is scalar (time-constant).
-- `dCJS_vv` : both are time-dependent.
 
 Hidden Markov models (Intro)
 =====
@@ -124,9 +30,13 @@ Hidden Markov models (Intro)
 Hidden Markov models (HMMs) are a general statistical framework for:
 
 - systems with discrete latent states (usually) and discrete time steps
-- probabilities of transitioning between states at each time step
+
+    * probabilities of transitioning between states at each time step
+
 - discrete observation categories and imperfect observation (misclassification)
-- probabilities of being observed in one category given the (true) latent state.
+    
+    *  probabilities of being observed in one category given the (true) latent state.
+
 - If transition and/or observation probabilities are time-dependent, we call it a "Dynamic HMM" (DHMM).
 
 Usually people use "Hidden Markov model" for discrete states and "state-space model" for the equivalent ideas with continuous states, but sometimes "Hidden Markov model" has been used for the latter.  They are also related to "partially observed Markov processes" and related terms.
@@ -144,6 +54,7 @@ Hidden Markov models (notation)
 - `T[i, j, t]`: probability of state change $i \rightarrow j$ in time step $t \rightarrow t+1$.
 - `O[i, j, t]`: probability of observing state $i$ as category $j$ at time $t$.
 - `init[i]`   : probability of being in state $i$ at $t = 1$.
+- First observation comes from first state.
 
 (In time-independent cases, the third index is dropped.)
 
@@ -206,7 +117,7 @@ Hidden Markov models (worked example)
 - n = 250 unique plants
 - n = 236 plants seen before the last observation time
 
-This is a simple multi-state model because the state when not seen is unknown.  The following would also work for multi-event models.
+This is a multi-state model because the state when not seen is unknown.  The following would also work for multi-event models.
 
 Obviously multi-state models can be more complicated than this.
 
