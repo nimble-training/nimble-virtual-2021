@@ -51,11 +51,11 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <body>
 <div class="slide titlepage">
   <h1 class="title">Strategies for improving MCMC</h1>
-  <h1 class="subtitle">NIMBLE 2020 Virtual Workshop</h1>
+  <h1 class="subtitle">NIMBLE 2021 Virtual Workshop</h1>
   <p class="author">
 NIMBLE Development Team
   </p>
-  <p class="date">June 2020</p>
+  <p class="date">May 2021</p>
 </div>
 <div class="slide section level1">
 
@@ -175,7 +175,7 @@ cmcmc &lt;-<span class="st"> </span><span class="kw">compileNimble</span>(mcmc, 
 <pre><code>## |-------------|-------------|-------------|-------------|
 ## |-------------------------------------------------------|</code></pre>
 <pre><code>##    user  system elapsed 
-##   1.688   0.004   1.692</code></pre>
+##   1.767   0.000   1.767</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># change to c(3,5) in live demo</span>
 <span class="kw">par</span>(<span class="dt">mfrow =</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">5</span>))
 <span class="kw">ts.plot</span>(DEsamples[ , <span class="st">'farm_sd'</span>], <span class="dt">main =</span> <span class="st">'farm sd'</span>)
@@ -254,7 +254,7 @@ cmcmcCtrRE &lt;-<span class="st"> </span><span class="kw">compileNimble</span>(m
 <pre><code>## |-------------|-------------|-------------|-------------|
 ## |-------------------------------------------------------|</code></pre>
 <pre><code>##    user  system elapsed 
-##    1.23    0.00    1.23</code></pre>
+##   1.242   0.000   1.242</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">par</span>(<span class="dt">mfrow =</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">5</span>))
 <span class="kw">ts.plot</span>(DEsamplesCtrRE[ , <span class="st">'farm_sd'</span>], <span class="dt">main =</span> <span class="st">'farm sd'</span>)
 <span class="kw">ts.plot</span>(DEsamplesCtrRE[ , <span class="st">'farm_effect[1]'</span>], <span class="dt">main =</span> <span class="st">'farm effect 1'</span>)
@@ -304,7 +304,7 @@ cmcmcUncLen &lt;-<span class="st"> </span><span class="kw">compileNimble</span>(
 <pre><code>## |-------------|-------------|-------------|-------------|
 ## |-------------------------------------------------------|</code></pre>
 <pre><code>##    user  system elapsed 
-##   1.407   0.000   1.407</code></pre>
+##   1.446   0.000   1.446</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">par</span>(<span class="dt">mfrow =</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">5</span>))
 <span class="kw">ts.plot</span>(DEsamplesUncLen[ , <span class="st">'farm_sd'</span>], <span class="dt">main =</span> <span class="st">'farm sd'</span>)
 <span class="kw">ts.plot</span>(DEsamplesUncLen[ , <span class="st">'farm_effect[1]'</span>], <span class="dt">main =</span> <span class="st">'farm effect 1'</span>)
@@ -361,7 +361,7 @@ cmcmcBlock &lt;-<span class="st"> </span><span class="kw">compileNimble</span>(m
 <pre><code>## |-------------|-------------|-------------|-------------|
 ## |-------------------------------------------------------|</code></pre>
 <pre><code>##    user  system elapsed 
-##   1.009   0.000   1.009</code></pre>
+##   1.041   0.000   1.041</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">par</span>(<span class="dt">mfrow =</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">5</span>))
 <span class="kw">ts.plot</span>(DEsamplesBlock[ , <span class="st">'farm_sd'</span>], <span class="dt">main =</span> <span class="st">'farm sd'</span>)
 <span class="kw">ts.plot</span>(DEsamplesBlock[ , <span class="st">'farm_effect[1]'</span>], <span class="dt">main =</span> <span class="st">'farm effect 1'</span>)

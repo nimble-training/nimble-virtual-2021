@@ -184,11 +184,13 @@ cRegrModel <- compileNimble(regrModel)   # remember to compile model first
 cObjective <- compileNimble(rObjective, project = regrModel)
 ```
 
-Now let's try using it.
+Now let's try using it. Any thoughts why the warnings occur?
 
 ```{r, regr-optimize}
+set.seed(1)
 system.time(optR <- optim(c(0, 0, 1), rObjective$run, control = list(fnscale = -1)))
 system.time(optC <- optim(c(0, 0, 1), cObjective$run, control = list(fnscale = -1)))
 optR
 optC
 ```
+

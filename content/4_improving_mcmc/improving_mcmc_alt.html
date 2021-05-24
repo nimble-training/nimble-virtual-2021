@@ -191,9 +191,9 @@ summary {
 
 
 <h1 class="title toc-ignore">Strategies for improving MCMC</h1>
-<h3 class="subtitle">NIMBLE 2020 Virtual Workshop</h3>
+<h3 class="subtitle">NIMBLE 2021 Virtual Workshop</h3>
 <h4 class="author">NIMBLE Development Team</h4>
-<h4 class="date">June 2020</h4>
+<h4 class="date">May 2021</h4>
 
 </div>
 
@@ -313,7 +313,7 @@ cmcmc &lt;- compileNimble(mcmc, project = model)</code></pre>
 <pre><code>## |-------------|-------------|-------------|-------------|
 ## |-------------------------------------------------------|</code></pre>
 <pre><code>##    user  system elapsed 
-##   1.487   0.000   1.487</code></pre>
+##   1.492   0.000   1.493</code></pre>
 <pre class="r"><code># change to c(3,5) in live demo
 par(mfrow = c(1,5))
 ts.plot(DEsamples[ , 'farm_sd'], main = 'farm sd')
@@ -392,7 +392,7 @@ cmcmcCtrRE &lt;- compileNimble(mcmcCtrRE, project = modelCtrRE)</code></pre>
 <pre><code>## |-------------|-------------|-------------|-------------|
 ## |-------------------------------------------------------|</code></pre>
 <pre><code>##    user  system elapsed 
-##   1.220   0.000   1.219</code></pre>
+##   1.223   0.000   1.223</code></pre>
 <pre class="r"><code>par(mfrow = c(1,5))
 ts.plot(DEsamplesCtrRE[ , 'farm_sd'], main = 'farm sd')
 ts.plot(DEsamplesCtrRE[ , 'farm_effect[1]'], main = 'farm effect 1')
@@ -442,7 +442,7 @@ cmcmcUncLen &lt;- compileNimble(mcmcUncLen, project = modelUncLen)</code></pre>
 <pre><code>## |-------------|-------------|-------------|-------------|
 ## |-------------------------------------------------------|</code></pre>
 <pre><code>##    user  system elapsed 
-##   1.409   0.000   1.409</code></pre>
+##   1.389   0.000   1.390</code></pre>
 <pre class="r"><code>par(mfrow = c(1,5))
 ts.plot(DEsamplesUncLen[ , 'farm_sd'], main = 'farm sd')
 ts.plot(DEsamplesUncLen[ , 'farm_effect[1]'], main = 'farm effect 1')
@@ -499,7 +499,7 @@ cmcmcBlock &lt;- compileNimble(mcmcBlock, project = modelBlock)</code></pre>
 <pre><code>## |-------------|-------------|-------------|-------------|
 ## |-------------------------------------------------------|</code></pre>
 <pre><code>##    user  system elapsed 
-##   1.007   0.000   1.007</code></pre>
+##    1.05    0.00    1.05</code></pre>
 <pre class="r"><code>par(mfrow = c(1,5))
 ts.plot(DEsamplesBlock[ , 'farm_sd'], main = 'farm sd')
 ts.plot(DEsamplesBlock[ , 'farm_effect[1]'], main = 'farm effect 1')

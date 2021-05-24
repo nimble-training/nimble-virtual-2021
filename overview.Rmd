@@ -1,5 +1,5 @@
 ---
-title: "NIMBLE 2021 Virtual Workshop"
+title: "NIMBLE 2021 Virtual Workshop Overview"
 subtitle: "NIMBLE 2021 Virtual Workshop"
 author: "NIMBLE Development Team"
 date: "May 2021"
@@ -125,13 +125,13 @@ Here are the modules we'll work through for this short course.
  - Day 2
 
     - [5. User-defined distributions and functions](content/5_user_defined/user_defined.html) 
-    - [6. Basic programming in NIMBLE](content/6_writing_new_mcmc_samplers/writing_new_mcmc_samplers.html)
+    - [6. Basic programming in NIMBLE](content/6_intro_nimblefunctions/intro_nimblefunctions.html)
     - [7. Spatial modeling](content/7_spatial_models/spatial_models.html)
   
  - Day 3
  
     - [8. Model selection, including Bayesian nonparametrics](content/8_model_selection_bnp/model_selection_bnp.html)
-    - [9a. Ecological modeling](content/9_ecology/ecology.html) 
-    - [9b. Programming in NIMBLE](content/9_programming/programming.html)
+    - [9a. Ecological modeling](content/9a_ecological_models/ecological_models_part1.html) 
+    - [9b. Programming in NIMBLE](content/9b_programming/nimblefunction_programming.html)
 
 

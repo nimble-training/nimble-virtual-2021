@@ -21,7 +21,7 @@ knitr::opts_chunk$set(echo = TRUE,
 has_ggplot2 <- require(ggplot2)
 has_mcmcplots <- require(mcmcplots)
 has_coda <- require(coda)
-generate_original_results <- TRUE
+generate_original_results <- FALSE
 ```
 
 # What Is NIMBLE?
@@ -31,7 +31,7 @@ generate_original_results <- TRUE
 - An extension of the BUGS language for writing new functions and distributions.
 - A configurable system for MCMC.
 - A library of other methods.
-    - Sequential Monte Carlo (particle filtering)
+    - Sequential Monte Carlo (particle filtering) (via the `nimbleSMC` package)
     - Monte Carlo Expectation Maximization (maximum likelihood)
 - A model-generic programming system to write new analysis methods.
 - Numerical Inference for statistical Models using Bayesian and Likelihood Estimation.
@@ -56,7 +56,7 @@ library(nimble)
 # GLMM example: Load data
 
 ```{r}
-DeerEcervi <- read.table('DeerEcervi.txt', header = TRUE)
+DeerEcervi <- read.table(file.path('..', 'examples', 'DeerEcervi', 'DeerEcervi.txt'), header = TRUE)
 summary(DeerEcervi)
 
 ## Create presence/absence data from counts.

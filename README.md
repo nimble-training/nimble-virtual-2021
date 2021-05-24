@@ -5,22 +5,22 @@ Materials for the virtual NIMBLE workshop, May 26-28 2021.
 To prepare for the workshop:
 
  - Install NIMBLE (see below)
- - Install additional packages (see below and check back for updates)
- - (UNDER CONSTRUCTION) Join our Slack workspace (highly recommended but not required; see information in email)
- - (UNDER CONSTRUCTION) Download these materials (check back before the workshop on Wednesday for updates)
- - (UNDER CONSTRUCTION) See email for Zoom invitation.
+ - Install additional packages (see below)
+ - Join our Slack workspace (highly recommended but not required; see information in email)
+ - Download these materials (and check back before the workshop on Wednesday for updates)
+ - See email for Zoom invitation.
 
 All materials for the workshop will be in this GitHub repository. If you're familiar with Git/GitHub, you already know how to get all the materials on your computer. If you're not, simply click [here](https://github.com/nimble-training/nimble-virtual-2021/archive/master.zip).
 
-There is some overview information [here (UNDER CONSTRUCTION)](https://htmlpreview.github.io/?https://github.com/nimble-training/nimble-virtual-2021/blob/master/overview.html), including links to the content modules in order.
+There is some overview information [here (https://htmlpreview.github.io/?https://github.com/nimble-training/nimble-virtual-2021/blob/master/overview.html), including links to the content modules in order.
 
 Time: 8 am - 1 pm California time (GMT-8); 11 am - 4 pm Eastern US time.
 
-Location: Zoom (see email) and [Slack (UNDER CONSTRUCTION)](https://2021nimbleworkshop.slack.com).
+Location: Zoom (see email) and [Slack](https://2021nimbleworkshop.slack.com).
 
 ## Slack and Zoom instructions and tips/tricks
 
-Please see [this document (UNDER CONSTRUCTION)](https://docs.google.com/document/d/1hhm6Eco0KevM30aDGdpo0n-gYDcT7IPbw7_vTrb-BVQ/edit?usp=sharing) for discussion of how to use Zoom and Slack during the workshop.
+Please see [this document (https://docs.google.com/document/d/1hhm6Eco0KevM30aDGdpo0n-gYDcT7IPbw7_vTrb-BVQ/edit?usp=sharing) for discussion of how to use Zoom and Slack during the workshop.
 
 ## Tentative Schedule
 
@@ -52,6 +52,10 @@ Day 3 (Friday May 28):
 Our user manual is [here](https://r-nimble.org/html_manual/cha-welcome-nimble.html).
 
 We have a 'cheatsheet' [here](https://r-nimble.org/documentation).
+
+For those of you who are not already familiar with writing models in WinBUGS, JAGS, or NIMBLE, you may want to look through the first module (Introduction to NIMBLE) or Section 5.2 of our user manual in advance.
+
+We're happy to answer questions about writing models as we proceed through the workshop, but if you have no experience with it, reviewing in advance will greatly lessen the odds you feel lost right at the beginning.
 
 ## Installing NIMBLE
 
