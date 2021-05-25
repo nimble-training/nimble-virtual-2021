@@ -89,7 +89,7 @@ slides > slide {
 <li>Vectorize declarations to improve computational efficiency</li>
 <li>Marginalize to remove parameters</li>
 </ul></li>
-<li>(Advanced) Write new samplers that take advantage of particular model structures [tomorrow]</li>
+<li>(Advanced) Write new samplers that take advantage of particular model structures [Module 9b]</li>
 </ul>
 </div>
 <div id="load-the-e.-cervi-example-for-later" class="slide section level1">
@@ -101,7 +101,7 @@ slides > slide {
 <h1>Sampler choices</h1>
 <p>Sampler choices:</p>
 <ul>
-<li>Sampling standard deviations on a log scale can help, especially when there is posterior support near 0.</li>
+<li>Sampling standard deviations on the log scale can help, especially when there is posterior support near 0.</li>
 <li>Slice sampling can help mix a parameter at some computational cost.</li>
 <li>Blocking can help when parameters are correlated <em>given other parameters</em>.
 <ul>
@@ -127,6 +127,7 @@ slides > slide {
 <ul>
 <li>E.g., <code>farm_effect ~ N(0, sd)</code> vs. <code>farm_effect ~ N(mean, sd)</code>.</li>
 <li>Theory shows either parameterization can be better, depending on the model and data, but with reasonable amount of data, centered is often better.</li>
+<li>However, for HMC, as in Stan, uncentered is generally better!</li>
 </ul></li>
 </ul>
 </div>
@@ -175,7 +176,7 @@ cmcmc &lt;-<span class="st"> </span><span class="kw">compileNimble</span>(mcmc, 
 <pre><code>## |-------------|-------------|-------------|-------------|
 ## |-------------------------------------------------------|</code></pre>
 <pre><code>##    user  system elapsed 
-##   1.767   0.000   1.767</code></pre>
+##   1.686   0.000   1.686</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># change to c(3,5) in live demo</span>
 <span class="kw">par</span>(<span class="dt">mfrow =</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">5</span>))
 <span class="kw">ts.plot</span>(DEsamples[ , <span class="st">'farm_sd'</span>], <span class="dt">main =</span> <span class="st">'farm sd'</span>)
@@ -254,7 +255,7 @@ cmcmcCtrRE &lt;-<span class="st"> </span><span class="kw">compileNimble</span>(m
 <pre><code>## |-------------|-------------|-------------|-------------|
 ## |-------------------------------------------------------|</code></pre>
 <pre><code>##    user  system elapsed 
-##   1.242   0.000   1.242</code></pre>
+##   1.203   0.008   1.212</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">par</span>(<span class="dt">mfrow =</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">5</span>))
 <span class="kw">ts.plot</span>(DEsamplesCtrRE[ , <span class="st">'farm_sd'</span>], <span class="dt">main =</span> <span class="st">'farm sd'</span>)
 <span class="kw">ts.plot</span>(DEsamplesCtrRE[ , <span class="st">'farm_effect[1]'</span>], <span class="dt">main =</span> <span class="st">'farm effect 1'</span>)
@@ -304,7 +305,7 @@ cmcmcUncLen &lt;-<span class="st"> </span><span class="kw">compileNimble</span>(
 <pre><code>## |-------------|-------------|-------------|-------------|
 ## |-------------------------------------------------------|</code></pre>
 <pre><code>##    user  system elapsed 
-##   1.446   0.000   1.446</code></pre>
+##   1.392   0.000   1.392</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">par</span>(<span class="dt">mfrow =</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">5</span>))
 <span class="kw">ts.plot</span>(DEsamplesUncLen[ , <span class="st">'farm_sd'</span>], <span class="dt">main =</span> <span class="st">'farm sd'</span>)
 <span class="kw">ts.plot</span>(DEsamplesUncLen[ , <span class="st">'farm_effect[1]'</span>], <span class="dt">main =</span> <span class="st">'farm effect 1'</span>)
@@ -361,7 +362,7 @@ cmcmcBlock &lt;-<span class="st"> </span><span class="kw">compileNimble</span>(m
 <pre><code>## |-------------|-------------|-------------|-------------|
 ## |-------------------------------------------------------|</code></pre>
 <pre><code>##    user  system elapsed 
-##   1.041   0.000   1.041</code></pre>
+##   1.006   0.000   1.006</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">par</span>(<span class="dt">mfrow =</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">5</span>))
 <span class="kw">ts.plot</span>(DEsamplesBlock[ , <span class="st">'farm_sd'</span>], <span class="dt">main =</span> <span class="st">'farm sd'</span>)
 <span class="kw">ts.plot</span>(DEsamplesBlock[ , <span class="st">'farm_effect[1]'</span>], <span class="dt">main =</span> <span class="st">'farm effect 1'</span>)
@@ -686,7 +687,7 @@ model &lt;-<span class="st"> </span><span class="kw">nimbleModel</span>(code, <s
 </ul>
 <p>Here’s the marginalized result, with only 3 parameters.</p>
 <p><span class="math display">\[ y_i \sim N(\mu_0, \sigma^2 + \sigma_0^2) \]</span></p>
-<p>(If we want inference on <span class="math inline">\(\mu_i, i=1,\ldots,n\)</span> we need to sample the latent states conditional on the data and the MCMC draws of <span class="math inline">\(\mu_0, \sigma_0^2, \sigma^2\)</span>.)</p>
+<p>(If we want inference on <span class="math inline">\(\mu_i, i=1,\ldots,n\)</span> we need to sample the latent states conditional on the data and the MCMC draws of <span class="math inline">\(\mu_0, \sigma_0^2, \sigma^2\)</span>. We’ll work on this in Module 9b.)</p>
 </div>
 <div id="generalizing-the-e.-cervi-example" class="slide section level1">
 <h1>Generalizing the E. cervi example</h1>
@@ -814,7 +815,10 @@ modelFlexMarg &lt;-<span class="st"> </span><span class="kw">nimbleModel</span>(
 </div>
 <div id="exercise" class="slide section level1">
 <h1>Exercise</h1>
-<p>See <code>help(samplers)</code> and look at the <code>control</code> options for the <code>RW_block</code> sampler. Try some different values for <code>scale</code>, <code>propCov</code>, <code>adaptInterval</code>, and <code>adaptFactorExponent</code> in the blocked samplers for the uncentered E. cervi model and see how the values affect burn-in and mixing of the MCMC.</p>
+<ol style="list-style-type: decimal">
+<li><p>See <code>help(samplers)</code> and look at the <code>control</code> options for the <code>RW_block</code> sampler. Try some different values for <code>scale</code>, <code>propCov</code>, <code>adaptInterval</code>, and <code>adaptFactorExponent</code> in the blocked samplers for the uncentered E. cervi model and see how the values affect burn-in and mixing of the MCMC.</p></li>
+<li><p>Set up MCMCs for the more flexible (bivariate mixture) model for the E. cervi example for both the versions with the <code>ind</code> indicator variables and the marginalized model. See what samplers are assigned. Run the two MCMCs and see which have bettter mixing (try to account for time spent sampling as well as mixing on a per-iteration basis).</p></li>
+</ol>
 </div>
 
   <!-- dynamically load mathjax for compatibility with self-contained -->

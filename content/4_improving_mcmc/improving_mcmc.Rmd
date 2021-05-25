@@ -23,7 +23,7 @@ if(!has_compareMCMCs)
 has_rjags <- require(rjags)
 if(!has_rjags)
   warning("This Rmd file uses package rjags.  Sections using it will be skipped.")
-doComparisons <- FALSE
+doComparisons <- TRUE
 runExercise <- FALSE
 ```
 
@@ -44,7 +44,7 @@ Some strategies for improving MCMC
     - Rewrite the model to reduce dependencies 
     - Vectorize declarations to improve computational efficiency
     - Marginalize to remove parameters 
- - (Advanced) Write new samplers that take advantage of particular model structures [tomorrow]
+ - (Advanced) Write new samplers that take advantage of particular model structures [Module 9b]
 
 # Load the E. cervi example for later:
 
@@ -57,7 +57,7 @@ source(file.path("..", "examples", "DeerEcervi", "load_DeerEcervi.R"),
 
 Sampler choices:
 
-- Sampling standard deviations on a log scale can help, especially when there is posterior support near 0.
+- Sampling standard deviations on the  log scale can help, especially when there is posterior support near 0.
 - Slice sampling can help mix a parameter at some computational cost.
 - Blocking can help when parameters are correlated *given other parameters*.
     - If parameters are *marginally correlated* but *conditionally independent*, blocking will not help.
@@ -78,6 +78,7 @@ Centering refers to two issues:
 - Random effects with a mean of zero (non-centered parameterization) versus centered around a mean (centered parameterization).
     - E.g., `farm_effect ~ N(0, sd)` vs. `farm_effect ~ N(mean, sd)`.
     - Theory shows either parameterization can be better, depending on the model and data, but with reasonable amount of data, centered is often better.
+    - However, for HMC, as in Stan, uncentered is generally better!
     
 # Back to the E. cervi MCMC
 
@@ -493,7 +494,7 @@ Here's the marginalized result, with only 3 parameters.
 
 $$ y_i \sim N(\mu_0, \sigma^2 + \sigma_0^2) $$
 
-(If we want inference on $\mu_i, i=1,\ldots,n$ we need to sample the latent states conditional on the data and the MCMC draws of $\mu_0, \sigma_0^2, \sigma^2$.)
+(If we want inference on $\mu_i, i=1,\ldots,n$ we need to sample the latent states conditional on the data and the MCMC draws of $\mu_0, \sigma_0^2, \sigma^2$. We'll work on this in Module 9b.)
 
 # Generalizing the E. cervi example
 
@@ -648,4 +649,6 @@ cModelFlexMarg$calculate('farm_effect')
 
 # Exercise
 
-See `help(samplers)` and look at the `control` options for the `RW_block` sampler. Try some different values for `scale`, `propCov`, `adaptInterval`, and `adaptFactorExponent` in the blocked samplers for the uncentered E. cervi model and see how the values affect burn-in and mixing of the MCMC.
+1. See `help(samplers)` and look at the `control` options for the `RW_block` sampler. Try some different values for `scale`, `propCov`, `adaptInterval`, and `adaptFactorExponent` in the blocked samplers for the uncentered E. cervi model and see how the values affect burn-in and mixing of the MCMC.
+
+2. Set up MCMCs for the more flexible (bivariate mixture) model for the E. cervi example for both the versions with the `ind` indicator variables and the marginalized model. See what samplers are assigned. Run the two MCMCs and see which have bettter mixing (try to account for time spent sampling as well as mixing on a per-iteration basis).

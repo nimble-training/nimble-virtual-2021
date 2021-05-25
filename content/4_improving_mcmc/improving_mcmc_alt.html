@@ -227,7 +227,7 @@ slides > slide {
 <li>Vectorize declarations to improve computational efficiency</li>
 <li>Marginalize to remove parameters</li>
 </ul></li>
-<li>(Advanced) Write new samplers that take advantage of particular model structures [tomorrow]</li>
+<li>(Advanced) Write new samplers that take advantage of particular model structures [Module 9b]</li>
 </ul>
 </div>
 <div id="load-the-e.-cervi-example-for-later" class="section level1">
@@ -239,7 +239,7 @@ slides > slide {
 <h1>Sampler choices</h1>
 <p>Sampler choices:</p>
 <ul>
-<li>Sampling standard deviations on a log scale can help, especially when there is posterior support near 0.</li>
+<li>Sampling standard deviations on the log scale can help, especially when there is posterior support near 0.</li>
 <li>Slice sampling can help mix a parameter at some computational cost.</li>
 <li>Blocking can help when parameters are correlated <em>given other parameters</em>.
 <ul>
@@ -265,6 +265,7 @@ slides > slide {
 <ul>
 <li>E.g., <code>farm_effect ~ N(0, sd)</code> vs. <code>farm_effect ~ N(mean, sd)</code>.</li>
 <li>Theory shows either parameterization can be better, depending on the model and data, but with reasonable amount of data, centered is often better.</li>
+<li>However, for HMC, as in Stan, uncentered is generally better!</li>
 </ul></li>
 </ul>
 </div>
@@ -313,7 +314,7 @@ cmcmc &lt;- compileNimble(mcmc, project = model)</code></pre>
 <pre><code>## |-------------|-------------|-------------|-------------|
 ## |-------------------------------------------------------|</code></pre>
 <pre><code>##    user  system elapsed 
-##   1.492   0.000   1.493</code></pre>
+##   1.519   0.000   1.519</code></pre>
 <pre class="r"><code># change to c(3,5) in live demo
 par(mfrow = c(1,5))
 ts.plot(DEsamples[ , 'farm_sd'], main = 'farm sd')
@@ -392,7 +393,7 @@ cmcmcCtrRE &lt;- compileNimble(mcmcCtrRE, project = modelCtrRE)</code></pre>
 <pre><code>## |-------------|-------------|-------------|-------------|
 ## |-------------------------------------------------------|</code></pre>
 <pre><code>##    user  system elapsed 
-##   1.223   0.000   1.223</code></pre>
+##   1.228   0.000   1.228</code></pre>
 <pre class="r"><code>par(mfrow = c(1,5))
 ts.plot(DEsamplesCtrRE[ , 'farm_sd'], main = 'farm sd')
 ts.plot(DEsamplesCtrRE[ , 'farm_effect[1]'], main = 'farm effect 1')
@@ -442,7 +443,7 @@ cmcmcUncLen &lt;- compileNimble(mcmcUncLen, project = modelUncLen)</code></pre>
 <pre><code>## |-------------|-------------|-------------|-------------|
 ## |-------------------------------------------------------|</code></pre>
 <pre><code>##    user  system elapsed 
-##   1.389   0.000   1.390</code></pre>
+##   1.367   0.000   1.367</code></pre>
 <pre class="r"><code>par(mfrow = c(1,5))
 ts.plot(DEsamplesUncLen[ , 'farm_sd'], main = 'farm sd')
 ts.plot(DEsamplesUncLen[ , 'farm_effect[1]'], main = 'farm effect 1')
@@ -499,7 +500,7 @@ cmcmcBlock &lt;- compileNimble(mcmcBlock, project = modelBlock)</code></pre>
 <pre><code>## |-------------|-------------|-------------|-------------|
 ## |-------------------------------------------------------|</code></pre>
 <pre><code>##    user  system elapsed 
-##    1.05    0.00    1.05</code></pre>
+##   1.017   0.000   1.017</code></pre>
 <pre class="r"><code>par(mfrow = c(1,5))
 ts.plot(DEsamplesBlock[ , 'farm_sd'], main = 'farm sd')
 ts.plot(DEsamplesBlock[ , 'farm_effect[1]'], main = 'farm effect 1')
@@ -834,7 +835,7 @@ model &lt;- nimbleModel(code, data = list(y = rnorm(4)))</code></pre>
 </ul>
 <p>Here’s the marginalized result, with only 3 parameters.</p>
 <p><span class="math display">\[ y_i \sim N(\mu_0, \sigma^2 + \sigma_0^2) \]</span></p>
-<p>(If we want inference on <span class="math inline">\(\mu_i, i=1,\ldots,n\)</span> we need to sample the latent states conditional on the data and the MCMC draws of <span class="math inline">\(\mu_0, \sigma_0^2, \sigma^2\)</span>.)</p>
+<p>(If we want inference on <span class="math inline">\(\mu_i, i=1,\ldots,n\)</span> we need to sample the latent states conditional on the data and the MCMC draws of <span class="math inline">\(\mu_0, \sigma_0^2, \sigma^2\)</span>. We’ll work on this in Module 9b.)</p>
 </div>
 <div id="generalizing-the-e.-cervi-example" class="section level1">
 <h1>Generalizing the E. cervi example</h1>
@@ -960,7 +961,10 @@ modelFlexMarg &lt;- nimbleModel(DEcodeFlexMarg, data = DEdata,
 </div>
 <div id="exercise" class="section level1">
 <h1>Exercise</h1>
-<p>See <code>help(samplers)</code> and look at the <code>control</code> options for the <code>RW_block</code> sampler. Try some different values for <code>scale</code>, <code>propCov</code>, <code>adaptInterval</code>, and <code>adaptFactorExponent</code> in the blocked samplers for the uncentered E. cervi model and see how the values affect burn-in and mixing of the MCMC.</p>
+<ol style="list-style-type: decimal">
+<li><p>See <code>help(samplers)</code> and look at the <code>control</code> options for the <code>RW_block</code> sampler. Try some different values for <code>scale</code>, <code>propCov</code>, <code>adaptInterval</code>, and <code>adaptFactorExponent</code> in the blocked samplers for the uncentered E. cervi model and see how the values affect burn-in and mixing of the MCMC.</p></li>
+<li><p>Set up MCMCs for the more flexible (bivariate mixture) model for the E. cervi example for both the versions with the <code>ind</code> indicator variables and the marginalized model. See what samplers are assigned. Run the two MCMCs and see which have bettter mixing (try to account for time spent sampling as well as mixing on a per-iteration basis).</p></li>
+</ol>
 </div>
 
 
