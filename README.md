@@ -98,7 +98,7 @@ install_github("nimble-dev/nimble", ref = "devel", subdir = "packages/nimble")
 Some of the packages we will use (beyond those automatically installed with `nimble`) can be installed as follows:
 
 ```
-install.packages(c("mcmcplots", "CARBayesdata", "sp", "spdep", "classInt"))
+install.packages(c("mcmcplots", "CARBayesdata", "sp", "spdep", "classInt", "coda"))
 ```
 
 `compareMCMCs` is a package in development that is not yet on CRAN:
@@ -115,4 +115,9 @@ library(remotes)
 install_github("nimble-dev/compareMCMCs", subdir = "compareMCMCs", INSTALL_opts = "--no-multiarch")
 ```
 
+Attendees to the ecological modeling session (9a) should install `nimbleEcology` and `nimbleSCR` to run relevant code:
+
+```
+install.packages(c("nimbleEcology", "nimbleSCR"))
+```
 
