@@ -308,10 +308,14 @@ slides > slide {
 <div id="examples-of-syntax-that-works-in-nimblefunctions-for-compilation" class="section level1">
 <h1>Examples of syntax that works in <code>nimbleFunction</code>s for compilation:</h1>
 <ul>
-<li>Most math, including vectorized math: <code>x &lt;- A %*% b</code></li>
+<li>Most math, including vectorized math: <code>x &lt;- A %*% b</code>
+<ul>
 <li>Explicit indexing is not required as it is in model code.</li>
-<li>Most distributions, including recycling-rule behavior (mix and match scalars/vectors)</li>
+</ul></li>
+<li>Most distributions, including recycling-rule behavior (mix and match scalars/vectors)
+<ul>
 <li>e.g., <code>dnorm(xVector, muScalar, sigmaVector)</code></li>
+</ul></li>
 <li>integer for loops: <code>for(i in 1:n)</code></li>
 <li><code>if</code>-<code>then</code>-<code>else</code></li>
 <li>Some linear algebra: <code>eigen</code>, <code>svd</code>, <code>solve</code>, <code>forwardsolve</code>, <code>backsolve</code>, <code>inverse</code></li>
@@ -322,7 +326,7 @@ slides > slide {
 <p>Important difference in argument-passing:</p>
 <ul>
 <li>In compiled mode, non-scalar arguments are passed by reference.</li>
-<li>In uncompiled mode, they are passed by R semantics: pass-by-copy.</li>
+<li>In uncompiled mode, they are passed by copy (i.e., R semantics)</li>
 </ul>
 </div>
 <div id="user-defined-functions-motivation" class="section level1">
@@ -337,7 +341,7 @@ prec[1:N, 1:N] &lt;- inverse(cov[1:N, 1:N])
 x[1:N] ~ dmnorm(mu[1:N], prec[1:N, 1:N])</code></pre>
 <p>There are some disadvantages to this:</p>
 <ul>
-<li>Only the math functionality allowed in BUGS code can be used (e.g. no <code>if</code> statements)</li>
+<li>Only the math functionality allowed in BUGS code can be used (e.g., no <code>if</code> statements)</li>
 <li>Model code can get complicated (lack of modularity)</li>
 <li><p><span class="math inline">\(n^2\)</span> <code>cov[i,j]</code> nodes in the model are created, likely leading to inefficiencies at various stages of processing. In NIMBLE, the inefficiency from creating that many nodes occurs when:</p>
 <ul>
@@ -425,7 +429,7 @@ deps</code></pre>
 ## [4] &quot;x[1:134]&quot;</code></pre>
 <pre class="r"><code>model$simulate(deps)  # may be a bit slow uncompiled given the nested looping
 range(model$x)</code></pre>
-<pre><code>## [1] -0.9624839  1.2800704</code></pre>
+<pre><code>## [1] 0.1710029 1.0778284</code></pre>
 </div>
 <div id="debugging-user-defined-functions-and-distributions-in-a-model" class="section level1">
 <h1>Debugging user-defined functions and distributions in a model</h1>
@@ -473,7 +477,7 @@ covNode</code></pre>
   y[1:4] ~ dnorm_vec(predicted.y[1:4], sd = sigma)
 })</code></pre>
 <p>Modify the function below to write a vectorized <code>dnorm</code>.</p>
-<p>As it stands now, it just works on scalar ‘x’.</p>
+<p>As it stands now, it just works on scalar ‘x’:</p>
 <pre class="r"><code>my_dnorm &lt;- nimbleFunction(
   run = function(x = double(0), 
                  mean = double(0), sd = double(0), 
@@ -482,6 +486,7 @@ covNode</code></pre>
     logdens &lt;- dnorm(x, mean, sd, log = TRUE)
     if(log) return(logdens) else return(exp(dens))
   })</code></pre>
+<p>First step: what do you need to change <code>x = double(0)</code> to?</p>
 </div>
 
 

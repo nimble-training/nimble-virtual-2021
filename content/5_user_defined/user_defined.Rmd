@@ -137,9 +137,9 @@ The first use of `compileNimble` in each R session invokes some one-time steps, 
 # Examples of syntax that works in `nimbleFunction`s for compilation:
 
 - Most math, including vectorized math: `x <- A %*% b`
-   - Explicit indexing is not required as it is in model code.
+    - Explicit indexing is not required as it is in model code.
 - Most distributions, including recycling-rule behavior (mix and match scalars/vectors)
-   - e.g., `dnorm(xVector, muScalar, sigmaVector)`
+    - e.g., `dnorm(xVector, muScalar, sigmaVector)`
 - integer for loops: `for(i in 1:n)`
 - `if`-`then`-`else`
 - Some linear algebra: `eigen`, `svd`, `solve`, `forwardsolve`, `backsolve`, `inverse`
@@ -150,7 +150,7 @@ The first use of `compileNimble` in each R session invokes some one-time steps, 
 Important difference in argument-passing:
 
 - In compiled mode, non-scalar arguments are passed by reference.
-- In uncompiled mode, they are passed by R semantics: pass-by-copy.
+- In uncompiled mode, they are passed by copy (i.e., R semantics)
 
 # User-defined functions: motivation
 
@@ -169,7 +169,7 @@ x[1:N] ~ dmnorm(mu[1:N], prec[1:N, 1:N])
 
 There are some disadvantages to this:
 
-  - Only the math functionality allowed in BUGS code can be used (e.g. no `if` statements)
+  - Only the math functionality allowed in BUGS code can be used (e.g., no `if` statements)
   - Model code can get complicated (lack of modularity)
   - $n^2$ `cov[i,j]` nodes in the model are created, likely leading to inefficiencies at various stages of processing.  In NIMBLE, the inefficiency from creating that many nodes occurs when:
 
@@ -331,7 +331,7 @@ code <- nimbleCode({
 
 Modify the function below to write a vectorized `dnorm`. 
 
-As it stands now, it just works on scalar 'x'. 
+As it stands now, it just works on scalar 'x':
 
 ```{r, eval=FALSE}
 my_dnorm <- nimbleFunction(
@@ -343,3 +343,5 @@ my_dnorm <- nimbleFunction(
     if(log) return(logdens) else return(exp(dens))
   })
 ```
+
+First step: what do you need to change `x = double(0)` to?
