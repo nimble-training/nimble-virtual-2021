@@ -79,11 +79,12 @@ slides > slide {
 <h1>Alternative distribution parameterizations and named parameters</h1>
 <ul>
 <li>BUGS/JAGS: Only <code>dnorm(mu, tau)</code> is supported, where <code>tau</code> is precision.</li>
-<li><p>NIMBLE: Alternative parameterizations and named parameters are supported:</p>
+<li><p>NIMBLE: Alternative parameterizations and named parameters are supported (but defaults are same as with JAGS/WinBUGS):</p>
 <ul>
-<li><code>dnorm(mean = mu, sd = sigma)</code></li>
-<li><code>dnorm(mean = mu, var = sigma_squared)</code></li>
-<li><code>dnorm(mean = mu, tau = tau)</code> (tau = precision)</li>
+<li><code>dnorm(mean = mu, sd = sigma)</code><br />
+</li>
+<li><p><code>dnorm(mean = mu, var = sigma_squared)</code></p></li>
+<li><p><code>dnorm(mean = mu, tau = tau)</code> (tau = precision) DEFAULT IF NOT NAMED</p></li>
 </ul></li>
 <li><p>Distributions with alternative parameterizations are listed in Table 5.2 of <a href="https://r-nimble.org/html_manual/cha-writing-models.html#subsec:dists-and-functions">User Manual Section 5.2.4</a></p></li>
 <li><p>Usage in the deer E. cervi example.</p></li>
@@ -169,7 +170,7 @@ farm_prec &lt;-<span class="st"> </span><span class="dv">1</span><span class="op
 <li>Distinction between <code>constants</code> and <code>data</code> [seen above].</li>
 <li>Vectorized math and linear algebra [more below].</li>
 <li>Definition-time if-then-else (multiple model variants from the same code) [more below].</li>
-<li>User-defined functions and distributions [later today].</li>
+<li>User-defined functions and distributions [tomorrow].</li>
 </ul>
 <p>And a limitation of NIMBLE</p>
 <ul>
@@ -186,7 +187,7 @@ farm_prec &lt;-<span class="st"> </span><span class="dv">1</span><span class="op
 </ul></li>
 <li>Sometimes NIMBLE is not as smart as BUGS/JAGS at determining dimensions. There are two solutions:
 <ul>
-<li>Give dimensions explicity: <code>x[1:n, 1:m]</code>, OR</li>
+<li>Give dimensions explicitly in model code: <code>x[1:n, 1:m]</code>, OR</li>
 <li>Provide a <code>dimensions</code> argument to <code>nimbleModel</code>.
 <ul>
 <li>Example: <code>dimensions = list(x = c(n, m))</code>.</li>
@@ -338,7 +339,7 @@ model<span class="op">$</span>y</code></pre></div>
 <p>Results from <code>model$getDependencies</code> are in <em>topologically sorted</em> order:</p>
 <ul>
 <li>If you calculate them in order, you’ll get correct results.</li>
-<li>E.g <code>predicted.y[2]</code> comes before <code>y[2]</code>.</li>
+<li>E.g., <code>predicted.y[2]</code> comes before <code>y[2]</code>.</li>
 </ul>
 <h2 id="why-provide-indexes-as-constants">Why provide indexes as constants?</h2>
 <p>Recall the likelihood component of the deer E. cervi model:</p>
@@ -505,7 +506,7 @@ model2 &lt;-<span class="st"> </span><span class="kw">nimbleModel</span>(code2,
 model2<span class="op">$</span>sigma</code></pre></div>
 <pre><code>## [1] 71.76185</code></pre>
 <p>Data values are protected from simulation unless you are sure.</p>
-<p>(The following is not good model-generic programming. See below.)</p>
+<p>(The following is not good model-generic programming. More in the next few slides.)</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">model2<span class="op">$</span>y</code></pre></div>
 <pre><code>## [1]  0.3295078 -0.8204684  0.4874291  0.7383247</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">model2<span class="op">$</span><span class="kw">simulate</span>(<span class="st">'y'</span>) ## Will not over-write data nodes</code></pre></div>

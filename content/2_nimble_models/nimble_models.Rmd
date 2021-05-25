@@ -30,11 +30,13 @@ source(file.path("..", "examples", "DeerEcervi", "load_DeerEcervi.R"),
 # Alternative distribution parameterizations and named parameters
 
 - BUGS/JAGS: Only `dnorm(mu, tau)` is supported, where `tau` is precision.
-- NIMBLE: Alternative parameterizations and named parameters are supported:
+- NIMBLE: Alternative parameterizations and named parameters are supported (but defaults are same as with JAGS/WinBUGS):
 
-    - `dnorm(mean = mu, sd = sigma)`
-    - `dnorm(mean = mu, var = sigma_squared)`
-    - `dnorm(mean = mu, tau = tau)` (tau = precision)
+   
+    - `dnorm(mean = mu, sd = sigma)`                    
+    - `dnorm(mean = mu, var = sigma_squared)`  
+    
+    - `dnorm(mean = mu, tau = tau)` (tau = precision)   DEFAULT IF NOT NAMED   
     
 - Distributions with alternative parameterizations are listed in Table 5.2 of [User Manual Section 5.2.4](https://r-nimble.org/html_manual/cha-writing-models.html#subsec:dists-and-functions)
 
@@ -133,7 +135,7 @@ How NIMBLE extends BUGS
  - Distinction between `constants` and `data` [seen above].
  - Vectorized math and linear algebra [more below].
  - Definition-time if-then-else (multiple model variants from the same code) [more below].
- - User-defined functions and distributions [later today].
+ - User-defined functions and distributions [tomorrow].
 
 And a limitation of NIMBLE
  
@@ -145,7 +147,7 @@ And a limitation of NIMBLE
     - If `x` is 2-dimensional, use `x[,] %*% beta[]`, not `x %*% beta`
     - (This limitation only pertains to model code, not `nimbleFunction` programming, which we will cover later.)
 - Sometimes NIMBLE is not as smart as BUGS/JAGS at determining dimensions.  There are two solutions:
-    - Give dimensions explicity: `x[1:n, 1:m]`, OR
+    - Give dimensions explicitly in model code: `x[1:n, 1:m]`, OR
     - Provide a `dimensions` argument to `nimbleModel`.  
         - Example: `dimensions = list(x = c(n, m))`.
 
@@ -348,7 +350,7 @@ For typical MCMC samplers, `model$getDependencies('slope')` returns the nodes th
 Results from `model$getDependencies` are in *topologically sorted* order:
 
 - If you calculate them in order, you'll get correct results.
-- E.g `predicted.y[2]` comes before `y[2]`.
+- E.g., `predicted.y[2]` comes before `y[2]`.
 
 ## Why provide indexes as constants?
 
@@ -476,7 +478,7 @@ model2$sigma
 
 Data values are protected from simulation unless you are sure.
 
-(The following is not good model-generic programming.  See below.)
+(The following is not good model-generic programming. More in the next few slides.)
 
 ```{r}
 model2$y
