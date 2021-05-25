@@ -187,9 +187,9 @@ A `nimble` MCMC is an ordered set of samplers.
 
 Example:
 
-- Sampler 1: $(\theta_1^{(k)}, \theta_2^{(k)}, \theta_3^{(k)}, \theta_4^{(k)}) \rightarrow (\theta_1^{(k+1)}, \theta_2^{(k)}, \theta_3^{(k)}, \theta_4^{(k)})$
-- Sampler 2: $(\theta_1^{(k+1)}, \theta_2^{(k)}, \theta_3^{(k)}, \theta_4^{(k)}) \rightarrow (\theta_1^{(k+1)}, \theta_2^{(k+2)}, \theta_3^{(k+2)}, \theta_4^{(k)})$
-- Sampler 3: $(\theta_1^{(k+1)}, \theta_2^{(k+1)}, \theta_3^{(k+1)}, \theta_4^{(k)}) \rightarrow (\theta_1^{(k+1)}, \theta_2^{(k+1)}, \theta_3^{(k+1)}, \theta_4^{(k+1)})$
+- Sampler 1 (Update $\theta_1$): $(\theta_1^{(k)}, \theta_2^{(k)}, \theta_3^{(k)}, \theta_4^{(k)}) \rightarrow (\theta_1^{(k+1)}, \theta_2^{(k)}, \theta_3^{(k)}, \theta_4^{(k)})$
+- Sampler 2 (Update $\theta_2$ and $\theta_3$): $(\theta_1^{(k+1)}, \theta_2^{(k)}, \theta_3^{(k)}, \theta_4^{(k)}) \rightarrow (\theta_1^{(k+1)}, \theta_2^{(k+1)}, \theta_3^{(k+1)}, \theta_4^{(k)})$
+- Sampler 3 (Update $\theta_4$): $(\theta_1^{(k+1)}, \theta_2^{(k+1)}, \theta_3^{(k+1)}, \theta_4^{(k)}) \rightarrow (\theta_1^{(k+1)}, \theta_2^{(k+1)}, \theta_3^{(k+1)}, \theta_4^{(k+1)})$
 
 MCMC kernel
 =====
@@ -361,7 +361,7 @@ The needed ratio for many methods is
 
 Conclusion: only the part of $[Y, \theta]$ that involves a particular parameter(s) needs to be calculated.
 
-Code: If $\theta_1$ is `target <- 'theta[1]'`, the nodes needing calculation are obtained by `model$getDependencies(target)`.
+Code: If $\theta_1$ (`'theta[1]'` in code) is the `target` node for a sampler, the nodes needing calculation are obtained by `model$getDependencies(target)`.
 
 Different methods require different numbers of calculations of $[Y, \theta]$, so some are slow and some are fast.
 
@@ -422,7 +422,7 @@ nextTargetDist <- 0.03 * dnorm(theta1, 2.4, 0.2)
      - one evaluation of $[Y, (\theta_1', \theta_F)]$ (ditto) and some copying to save previous values.
 - How to choose $\nu$? 
      - By "adaptation".  The algorithm increases or decreases $\nu$ to achieve theoretically derived optimal accpetance rate.  
-- Remember that the target distribution may change on the next iteration (goldenrod distribution) because $\theta_F$ may have been updated.
+- Remember that the target distribution may change on the next iteration because $\theta_F$ may have been updated.
 - Generalizes to multivariate (block) sampling.
 - This method is computationally cheap but may or may not mix well.
 
@@ -524,7 +524,7 @@ Slice sampling computational costs
 - Bounds must be determined by "stepping out" until the target height is below the chosen level (blue).
     - It is ok to overshoot but then some uniform draws for the new value (blue line) may need to be discarded (after calculations determine they are outside the value range).
 - Computational cost can be *many* evaluations of $[Y, (\theta_1, \theta_F)]$ (again, only the necessary factors).
-- Mixing might typically be better than adaptive random-walk Metropolis-Hastings, but at high computational cost.
+- Mixing might typically be better than adaptive random-walk Metropolis-Hastings, but at higher computational cost.
 
 Multivariate random-walk Metropolis-Hastings samplers
 =====
@@ -579,7 +579,7 @@ Other samplers in nimble
 - binary (for Bernoulli variables)
 - categorical (these are *costly*).
 - posterior predictive sampler (for no dependencies)
-- elliptical slice sampler (for certain MVN cases).
+- elliptical slice sampler (for certain scalar or multivariate normal cases).
 - CAR (conditional autoregression model) normal sampler
 - CAR proper sampler
 - random-walk multinomial sampler
@@ -601,7 +601,7 @@ Samplers that use derivatives of $[\mbox{data, parameters}]$:
 
     - Use one gradient evaluation to make a good MH proposal density.
     
-These samplers will be supported in `nimble` in the coming year.  They work now in development versions.
+These samplers will be supported in `nimble` in the future  They work now in development versions.
 
 Modifying an MCMC configuration in `nimble`
 =====
@@ -632,7 +632,7 @@ Using `compareMCMCs`
 `compareMCMCs` is the name of a nearly complete R package available on github for managing performance comparisons among MCMC methods, particularly in `nimble`.  
 
 - `compareMCMCs` manages mulitple MCMC runs and times steps of preparation (compilation) and sampling.
-- It can also run other MCMC "engines" via a plug-in system.  Currently there is a plug-in for JAGS and a draft plug-in for Stan.  Plug-ins for JAGS and OpenBUGS/WinBUGS (not yet implemented) can use the same model as `nimble` if it is compatible.
+- It can also run other MCMC "engines" via a plug-in system.  Currently there are plug-ins for JAGS and Stan.  Plug-ins for JAGS and OpenBUGS/WinBUGS (not yet implemented) can use the same model as `nimble` if it is compatible.
 - Choice of performance metrics is extensible by a plug-in system.
 - It can generate comparison figures.  Components included are extensible by a plug-in system.
 - It can convert between different parameter names or parameterizations across MCMC engines.
