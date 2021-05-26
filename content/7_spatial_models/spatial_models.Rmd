@@ -304,7 +304,7 @@ This looks more like the usual AR(1) model with the somewhat non-intuitive prope
 
 Note: when the number of neighbors is roughly the same for all locations the Leroux model can be seen to be approximately a variation on this model. 
 
-# Joint representation of CAR models
+# Joint representation of CAR models: Markov Random Fields
 
 ICAR model:
 
@@ -389,7 +389,9 @@ x[1:N] ~ dmnorm(mu[1:N], cov = cov[1:N, 1:N])
 
 # Example: revisiting the Scotland areal data
 
-Sometimes researchers use a Gaussian process for areal data, evaluating the process values at the centroids of the areas. More commonly the Gaussian process would we used for continuous data or applied to regularly-gridded data.
+Sometimes researchers use a Gaussian process for areal data, evaluating the process values at the centroids of the areas.
+
+More commonly the Gaussian process would we used for continuous data or applied to regularly-gridded data.
 
 For simplicity, let's apply the Gaussian process to the same example we used for the CAR model.
 
@@ -433,7 +435,7 @@ cModel <- compileNimble(model)
 
 # Running an MCMC
 
-In order to improve mixing, we'll customize the initial proposal scale for the block random walk (Metropolis)
+In order to improve mixing, we'll customize a tuning parameter for the block random walk (Metropolis)
 sampler on the latent spatial values.
 
 ```{r}
@@ -445,7 +447,7 @@ conf$addSampler('x[1:134]', 'RW_block', control = list(adaptFactorExponent = 0.2
 
 MCMC <- buildMCMC(conf)
 cMCMC <- compileNimble(MCMC, project = cModel)
-samples <- runMCMC(cMCMC, niter = 10000, nburnin = 5000, thin = 25)
+samples <- runMCMC(cMCMC, niter = 10000, nburnin = 5000, thin = 5)
 ```
 
 Note that mixing in this model is somewhat slow, because of the need to explore the correlated spatial process, `x`, which is generally less effective in non-conjugate settings, such as this one, where the observations are Poisson and the prior for the latent process is normal.
@@ -491,7 +493,7 @@ for(i in 1:N) {
 
 # Also could create a user-defined distribution to vectorize the likelihood
 lambda[1:N] <- expected[1:N] * exp(beta*z[1:N] + x[1:N])
-y[1:N] ~ dpois_vec(lambda[1:N])
+y[1:N] ~ dpois_vec(lambda[1:N])   # dpois_vec would have to be written
 ```
 
 Finally, we might explore use of the AFSS or elliptical slice samplers for `x[1:N]`.
@@ -503,11 +505,11 @@ It's best to sample unobserved locations "offline", namely separately after the 
 We'd need:
  
  - a function that samples from the MVN conditional of the unobserved $x^*$ values given $x$ and relevant parameters of the spatial process, and
- - to take the draws from the MCMC for $x$ and relevant parameters. 
+ - to take the draws from the MCMC for $x$ and relevant parameters, and apply the function. 
  
  Could be done in R or, for larger problems, in a nimbleFunction that is compiled for speed, pulling the draws from the MCMC's `mvSamples` data structure and inserting into the model with `values(model, nodes) <- `.
  
-This is the exercise at the end of the module.
+This is the exercise at the end of the module. Use of nimbleFunctions for similar post hoc processing is part of Module 9b.
 
 # Large spatial models and spatial nonstationarity
 
@@ -637,7 +639,7 @@ plot(respiratorydata_sp, col = col, border = 'grey', lwd = 0.4)
    - monotonicity and other shape constraints
    - boundary effects
 
-For example, Stoner and Economou (2020; https://arxiv.org/abs/1906.03846) used mgcv-based spline terms in a NIMBLE model for precipitation, handling seasonality with cyclic splines.
+For example, Stoner and Economou (2020; Computational Statistics and Data Analysis; https://arxiv.org/abs/1906.03846) used mgcv-based spline terms in a NIMBLE model for precipitation, handling seasonality with cyclic splines.
 
 # Exercise
 
@@ -705,6 +707,8 @@ xstar_samples2 <- cget_samples(samples, z, Znew, dist11, dist22, dist21)
 ```
 
 We could also write this to use the `mvSamples` modelValues object that stores all the MCMC output instead of using the R matrix representation of the samples.
+
+We'll see various approaches to post hoc processing in Module 9b.
 
 # Appendix: using JAGS instead (for the spline-based model)
 

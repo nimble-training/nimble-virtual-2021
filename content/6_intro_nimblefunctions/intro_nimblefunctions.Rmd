@@ -41,7 +41,7 @@ calcDeps <- nimbleFunction(
   setup = function(model, nodes) { # setup function gives first stage of evalution
     calcNodes <- model$getDependencies(nodes)
   },
-  run = function() {               # run function (or other methods) give sectond stage of evaluation
+  run = function() {               # run function (or other methods) give second stage of evaluation
     ans <- model$calculate(calcNodes)
     return(ans)
     returnType(double())
