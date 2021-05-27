@@ -429,7 +429,7 @@ deps</code></pre>
 ## [4] &quot;x[1:134]&quot;</code></pre>
 <pre class="r"><code>model$simulate(deps)  # may be a bit slow uncompiled given the nested looping
 range(model$x)</code></pre>
-<pre><code>## [1] 0.1710029 1.0778284</code></pre>
+<pre><code>## [1] -2.292431  1.049171</code></pre>
 </div>
 <div id="debugging-user-defined-functions-and-distributions-in-a-model" class="section level1">
 <h1>Debugging user-defined functions and distributions in a model</h1>
@@ -484,7 +484,7 @@ covNode</code></pre>
                  log = logical(0, default = 0)) {
     returnType(double(0))
     logdens &lt;- dnorm(x, mean, sd, log = TRUE)
-    if(log) return(logdens) else return(exp(dens))
+    if(log) return(logdens) else return(exp(logdens))
   })</code></pre>
 <p>First step: what do you need to change <code>x = double(0)</code> to?</p>
 </div>

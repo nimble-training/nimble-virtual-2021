@@ -84,7 +84,7 @@ slides > slide {
   <span class="dt">setup =</span> <span class="cf">function</span>(model, nodes) { <span class="co"># setup function gives first stage of evalution</span>
     calcNodes &lt;-<span class="st"> </span>model<span class="op">$</span><span class="kw">getDependencies</span>(nodes)
   },
-  <span class="dt">run =</span> <span class="cf">function</span>() {               <span class="co"># run function (or other methods) give sectond stage of evaluation</span>
+  <span class="dt">run =</span> <span class="cf">function</span>() {               <span class="co"># run function (or other methods) give second stage of evaluation</span>
     ans &lt;-<span class="st"> </span>model<span class="op">$</span><span class="kw">calculate</span>(calcNodes)
     <span class="kw">return</span>(ans)
     <span class="kw">returnType</span>(<span class="kw">double</span>())
@@ -171,7 +171,7 @@ calcDeps_regr<span class="op">$</span><span class="kw">run</span>()   ## second 
   }
 ) ## warning about not being able to compiled with browser() is expected.</code></pre></div>
 <p>Stepping through debugging from <code>browser()</code> will not work well in Rmarkdown, so this code is not evaluated. Run it in your own R session.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">calcDeps_regr &lt;-<span class="st"> </span><span class="kw">calcDeps</span>(model, <span class="kw">c</span>(<span class="st">'b0'</span>, <span class="st">'b1'</span>, <span class="st">'sigma'</span>)) ## We'll see the setup code followed by internal code.
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">calcDeps_regr &lt;-<span class="st"> </span><span class="kw">calcDeps</span>(regrModel, <span class="kw">c</span>(<span class="st">'b0'</span>, <span class="st">'b1'</span>, <span class="st">'sigma'</span>)) ## We'll see the setup code followed by internal code.
 calcDeps_regr<span class="op">$</span><span class="kw">run</span>()</code></pre></div>
 </div>
 <div id="more-about-nimblefunctions" class="slide section level1">
@@ -553,10 +553,10 @@ cRegrModel &lt;-<span class="st"> </span><span class="kw">compileNimble</span>(r
 ## Warning in dnorm(model$y[getNodeFunctionIndexedInfo(INDEXEDNODEINFO_,
 ## 1)], : NaNs produced</code></pre>
 <pre><code>##    user  system elapsed 
-##   7.301   0.004   7.305</code></pre>
+##   7.768   0.000   7.799</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">system.time</span>(optC &lt;-<span class="st"> </span><span class="kw">optim</span>(<span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>), cObjective<span class="op">$</span>run, <span class="dt">control =</span> <span class="kw">list</span>(<span class="dt">fnscale =</span> <span class="dv">-1</span>)))</code></pre></div>
 <pre><code>##    user  system elapsed 
-##   0.003   0.000   0.002</code></pre>
+##   0.002   0.000   0.002</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">optR</code></pre></div>
 <pre><code>## $par
 ## [1] 0.2551346 0.5781320 0.2329039

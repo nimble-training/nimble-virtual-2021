@@ -293,7 +293,7 @@ deps</code></pre></div>
 ## [4] &quot;x[1:134]&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">model<span class="op">$</span><span class="kw">simulate</span>(deps)  <span class="co"># may be a bit slow uncompiled given the nested looping</span>
 <span class="kw">range</span>(model<span class="op">$</span>x)</code></pre></div>
-<pre><code>## [1] 0.0352011 1.6553115</code></pre>
+<pre><code>## [1] -0.319406  1.163133</code></pre>
 </div>
 <div id="debugging-user-defined-functions-and-distributions-in-a-model" class="slide section level1">
 <h1>Debugging user-defined functions and distributions in a model</h1>
@@ -344,7 +344,7 @@ covNode</code></pre></div>
                  <span class="dt">log =</span> <span class="kw">logical</span>(<span class="dv">0</span>, <span class="dt">default =</span> <span class="dv">0</span>)) {
     <span class="kw">returnType</span>(<span class="kw">double</span>(<span class="dv">0</span>))
     logdens &lt;-<span class="st"> </span><span class="kw">dnorm</span>(x, mean, sd, <span class="dt">log =</span> <span class="ot">TRUE</span>)
-    <span class="cf">if</span>(log) <span class="kw">return</span>(logdens) <span class="cf">else</span> <span class="kw">return</span>(<span class="kw">exp</span>(dens))
+    <span class="cf">if</span>(log) <span class="kw">return</span>(logdens) <span class="cf">else</span> <span class="kw">return</span>(<span class="kw">exp</span>(logdens))
   })</code></pre></div>
 <p>First step: what do you need to change <code>x = double(0)</code> to?</p>
 </div>
