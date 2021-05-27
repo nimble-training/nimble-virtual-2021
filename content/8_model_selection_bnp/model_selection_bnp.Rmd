@@ -179,8 +179,9 @@ outputReduced <- nimbleMCMC(code = codeParamReduced, data = data, inits = inits,
 
 # WAIC results
 
-Interpreting the numerical values -- WAIC is on the deviance scale:
+Interpreting the numerical values:
 
+  - WAIC is on the deviance scale:
   - Lower is better
   - AIC penalizes the log-likelihood by two when adding a parameter, to give a sense for the scale of things. 
   
@@ -197,11 +198,13 @@ The better WAIC for the full model is not suprising given what we saw in the pos
  - There are different variations on WAIC depending on what predictive distribution is of interest:
  
     - New observations (conditional WAIC, available now in NIMBLE)
+       - For example, predicting new E. cervi observations for existing farms
     - New groups (often represented as a new random effect) (marginal WAIC, to be available in version 0.12.0)
+       - For example, predicting new E. cervi observations for new farms without any data
 
  - WAIC relies on being able to partition (group) the data into `n` pieces; not clear how to use for spatial or temporally-correlated data
-    - Currently, observations are treated individually (not grouped), unless you use a multivariate distribution
-    - In NIMBLE version 0.12.0 you'll be able to group the data as desired, e.g., grouping all temporal observations for each patient in a longitudinal study
+    - Currently in NIMBLE, observations are treated individually (not grouped), unless you use a multivariate distribution.
+    - In NIMBLE version 0.12.0 you'll be able to group the data as desired, e.g., grouping all temporal observations for each patient in a longitudinal study.
 
 * See Gelman, A., J. Hwang, and A. Vehtari. 2014. “Understanding Predictive Information Criteria for Bayesian Models.” Statistics and Computing 24 (6): 997–1016.
 
@@ -220,7 +223,7 @@ The better WAIC for the full model is not suprising given what we saw in the pos
 - This has problems: when `ind` is 0, `beta1` follows its prior, until it hits a reasonable value for `beta1` that allows `ind` equal to 1 to be accepted.
 - "Solution": informative priors
 
-# Solution!: Reversible Jump MCMC
+# Solution! Reversible Jump MCMC
 
  - RJMCMC is a method for sampling across different models.
  - Specifically it is about sampling between different numbers of dimensions.
@@ -332,7 +335,7 @@ Gaussian proceses are also nonparametric Bayesian methods, and are feasible in N
 
 Avoiding technical details, a Dirichlet process distribution is a *discrete* distribution that induces clustering of draws from the distribution. It is parameterized by a base measure (a base distribution) and a concentration parameter, $\alpha$. At one extreme, the distribution would cluster all observations into a single value, and at the other it would represent draws from the base measure. 
 
-# Chinese restaurant process
+# Chinese restaurant process (CRP)
 
 The DP has at its core a model for clustering, which is usually called a Chinese restaurant process.
 
@@ -434,12 +437,12 @@ conf = configureMCMC(model, print = TRUE)
 
  - We also provide tools for using the stick-breaking representation of a Dirichlet process model.
  - As of nimble version 0.10.0 [we provide more flexibility for clustering multiple values at a time](https://r-nimble.org/nimbleExamples/bnp_multivariate.html).
-   - E.g., clustering time series without having to use multivariate distributions.
+    - E.g., clustering time series without having to use multivariate distributions.
  - `getSamplesDPmeasure()` will transform the MCMC output to give samples from the unknown density.
  
 # What happened with Avandia?
 
-The FDA ended up [strongly discouraging use](https://www.fda.gov/drugs/drug-safety-and-availability/fda-drug-safety-communication-avandia-rosiglitazone-labels-now-contain-updated-information-about)
+The FDA ended up [strongly discouraging use](https://www.fda.gov/drugs/drug-safety-and-availability/fda-drug-safety-communication-avandia-rosiglitazone-labels-now-contain-updated-information-about).
 
 # Exercise
 
