@@ -384,8 +384,9 @@ outputReduced &lt;- nimbleMCMC(code = codeParamReduced, data = data, inits = ini
 </div>
 <div id="waic-results" class="section level1">
 <h1>WAIC results</h1>
-<p>Interpreting the numerical values – WAIC is on the deviance scale:</p>
+<p>Interpreting the numerical values:</p>
 <ul>
+<li>WAIC is on the deviance scale:</li>
 <li>Lower is better</li>
 <li>AIC penalizes the log-likelihood by two when adding a parameter, to give a sense for the scale of things.</li>
 </ul>
@@ -400,13 +401,19 @@ outputReduced &lt;- nimbleMCMC(code = codeParamReduced, data = data, inits = ini
 <ul>
 <li><p>There are different variations on WAIC depending on what predictive distribution is of interest:</p>
 <ul>
-<li>New observations (conditional WAIC, available now in NIMBLE)</li>
-<li>New groups (often represented as a new random effect) (marginal WAIC, to be available in version 0.12.0)</li>
+<li>New observations (conditional WAIC, available now in NIMBLE)
+<ul>
+<li>For example, predicting new E. cervi observations for existing farms</li>
+</ul></li>
+<li>New groups (often represented as a new random effect) (marginal WAIC, to be available in version 0.12.0)
+<ul>
+<li>For example, predicting new E. cervi observations for new farms without any data</li>
+</ul></li>
 </ul></li>
 <li>WAIC relies on being able to partition (group) the data into <code>n</code> pieces; not clear how to use for spatial or temporally-correlated data
 <ul>
-<li>Currently, observations are treated individually (not grouped), unless you use a multivariate distribution</li>
-<li>In NIMBLE version 0.12.0 you’ll be able to group the data as desired, e.g., grouping all temporal observations for each patient in a longitudinal study</li>
+<li>Currently in NIMBLE, observations are treated individually (not grouped), unless you use a multivariate distribution.</li>
+<li>In NIMBLE version 0.12.0 you’ll be able to group the data as desired, e.g., grouping all temporal observations for each patient in a longitudinal study.</li>
 </ul></li>
 <li><p>See Gelman, A., J. Hwang, and A. Vehtari. 2014. “Understanding Predictive Information Criteria for Bayesian Models.” Statistics and Computing 24 (6): 997–1016.</p></li>
 </ul>
@@ -427,7 +434,7 @@ outputReduced &lt;- nimbleMCMC(code = codeParamReduced, data = data, inits = ini
 </ul>
 </div>
 <div id="solution-reversible-jump-mcmc" class="section level1">
-<h1>Solution!: Reversible Jump MCMC</h1>
+<h1>Solution! Reversible Jump MCMC</h1>
 <ul>
 <li>RJMCMC is a method for sampling across different models.</li>
 <li>Specifically it is about sampling between different numbers of dimensions.</li>
@@ -553,8 +560,8 @@ mean(resultsVarSel[ , 'theta'] != 0)  </code></pre>
 <p>Gaussian proceses are also nonparametric Bayesian methods, and are feasible in NIMBLE based on using multivariate normal finite-dimensional representations.</p>
 <p>Avoiding technical details, a Dirichlet process distribution is a <em>discrete</em> distribution that induces clustering of draws from the distribution. It is parameterized by a base measure (a base distribution) and a concentration parameter, <span class="math inline">\(\alpha\)</span>. At one extreme, the distribution would cluster all observations into a single value, and at the other it would represent draws from the base measure.</p>
 </div>
-<div id="chinese-restaurant-process" class="section level1">
-<h1>Chinese restaurant process</h1>
+<div id="chinese-restaurant-process-crp" class="section level1">
+<h1>Chinese restaurant process (CRP)</h1>
 <p>The DP has at its core a model for clustering, which is usually called a Chinese restaurant process.</p>
 <p>Here’s the idea - we represent the probability of a new customer sitting at each table as follows:</p>
 <center>
@@ -667,14 +674,16 @@ ts.plot(nGrps, xlab = 'iteration', ylab = 'number of components')</code></pre>
 <h1>BNP: more details</h1>
 <ul>
 <li>We also provide tools for using the stick-breaking representation of a Dirichlet process model.</li>
-<li>As of nimble version 0.10.0 <a href="https://r-nimble.org/nimbleExamples/bnp_multivariate.html">we provide more flexibility for clustering multiple values at a time</a>.</li>
+<li>As of nimble version 0.10.0 <a href="https://r-nimble.org/nimbleExamples/bnp_multivariate.html">we provide more flexibility for clustering multiple values at a time</a>.
+<ul>
 <li>E.g., clustering time series without having to use multivariate distributions.</li>
+</ul></li>
 <li><code>getSamplesDPmeasure()</code> will transform the MCMC output to give samples from the unknown density.</li>
 </ul>
 </div>
 <div id="what-happened-with-avandia" class="section level1">
 <h1>What happened with Avandia?</h1>
-<p>The FDA ended up <a href="https://www.fda.gov/drugs/drug-safety-and-availability/fda-drug-safety-communication-avandia-rosiglitazone-labels-now-contain-updated-information-about">strongly discouraging use</a></p>
+<p>The FDA ended up <a href="https://www.fda.gov/drugs/drug-safety-and-availability/fda-drug-safety-communication-avandia-rosiglitazone-labels-now-contain-updated-information-about">strongly discouraging use</a>.</p>
 </div>
 <div id="exercise" class="section level1">
 <h1>Exercise</h1>
