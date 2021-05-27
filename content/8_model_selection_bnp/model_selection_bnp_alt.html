@@ -401,10 +401,14 @@ outputReduced &lt;- nimbleMCMC(code = codeParamReduced, data = data, inits = ini
 <ul>
 <li><p>There are different variations on WAIC depending on what predictive distribution is of interest:</p>
 <ul>
-<li>New observations (conditional WAIC, available now in NIMBLE)</li>
+<li>New observations (conditional WAIC, available now in NIMBLE)
+<ul>
 <li>For example, predicting new E. cervi observations for existing farms</li>
-<li>New groups (often represented as a new random effect) (marginal WAIC, to be available in version 0.12.0)</li>
+</ul></li>
+<li>New groups (often represented as a new random effect) (marginal WAIC, to be available in version 0.12.0)
+<ul>
 <li>For example, predicting new E. cervi observations for new farms without any data</li>
+</ul></li>
 </ul></li>
 <li>WAIC relies on being able to partition (group) the data into <code>n</code> pieces; not clear how to use for spatial or temporally-correlated data
 <ul>

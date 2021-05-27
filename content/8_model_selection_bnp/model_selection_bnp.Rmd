@@ -198,9 +198,9 @@ The better WAIC for the full model is not suprising given what we saw in the pos
  - There are different variations on WAIC depending on what predictive distribution is of interest:
  
     - New observations (conditional WAIC, available now in NIMBLE)
-       - For example, predicting new E. cervi observations for existing farms
+         - For example, predicting new E. cervi observations for existing farms
     - New groups (often represented as a new random effect) (marginal WAIC, to be available in version 0.12.0)
-       - For example, predicting new E. cervi observations for new farms without any data
+         - For example, predicting new E. cervi observations for new farms without any data
 
  - WAIC relies on being able to partition (group) the data into `n` pieces; not clear how to use for spatial or temporally-correlated data
     - Currently in NIMBLE, observations are treated individually (not grouped), unless you use a multivariate distribution.
