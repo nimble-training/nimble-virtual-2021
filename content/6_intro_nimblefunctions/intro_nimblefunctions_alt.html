@@ -210,7 +210,7 @@ slides > slide {
   setup = function(model, nodes) { # setup function gives first stage of evalution
     calcNodes &lt;- model$getDependencies(nodes)
   },
-  run = function() {               # run function (or other methods) give sectond stage of evaluation
+  run = function() {               # run function (or other methods) give second stage of evaluation
     ans &lt;- model$calculate(calcNodes)
     return(ans)
     returnType(double())
@@ -297,7 +297,7 @@ calcDeps_regr$run()   ## second stage: run code</code></pre>
   }
 ) ## warning about not being able to compiled with browser() is expected.</code></pre>
 <p>Stepping through debugging from <code>browser()</code> will not work well in Rmarkdown, so this code is not evaluated. Run it in your own R session.</p>
-<pre class="r"><code>calcDeps_regr &lt;- calcDeps(model, c('b0', 'b1', 'sigma')) ## We'll see the setup code followed by internal code.
+<pre class="r"><code>calcDeps_regr &lt;- calcDeps(regrModel, c('b0', 'b1', 'sigma')) ## We'll see the setup code followed by internal code.
 calcDeps_regr$run()</code></pre>
 </div>
 <div id="more-about-nimblefunctions" class="section level1">
@@ -679,7 +679,7 @@ system.time(optR &lt;- optim(c(0, 0, 1), rObjective$run, control = list(fnscale 
 ## Warning in dnorm(model$y[getNodeFunctionIndexedInfo(INDEXEDNODEINFO_,
 ## 1)], : NaNs produced</code></pre>
 <pre><code>##    user  system elapsed 
-##   7.415   0.000   7.415</code></pre>
+##   7.716   0.036   7.759</code></pre>
 <pre class="r"><code>system.time(optC &lt;- optim(c(0, 0, 1), cObjective$run, control = list(fnscale = -1)))</code></pre>
 <pre><code>##    user  system elapsed 
 ##   0.002   0.000   0.002</code></pre>

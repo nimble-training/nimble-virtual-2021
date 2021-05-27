@@ -113,7 +113,7 @@ calcDeps <- nimbleFunction(
 
 Stepping through debugging from `browser()` will not work well in Rmarkdown, so this code is not evaluated.  Run it in your own R session.
 ```{r, eval=FALSE}
-calcDeps_regr <- calcDeps(model, c('b0', 'b1', 'sigma')) ## We'll see the setup code followed by internal code.
+calcDeps_regr <- calcDeps(regrModel, c('b0', 'b1', 'sigma')) ## We'll see the setup code followed by internal code.
 calcDeps_regr$run()
 ```
 

@@ -340,7 +340,7 @@ my_dnorm <- nimbleFunction(
                  log = logical(0, default = 0)) {
     returnType(double(0))
     logdens <- dnorm(x, mean, sd, log = TRUE)
-    if(log) return(logdens) else return(exp(dens))
+    if(log) return(logdens) else return(exp(logdens))
   })
 ```
 
