@@ -656,9 +656,9 @@ col &lt;-<span class="st"> </span><span class="kw">findColours</span>(q, pal)
 dist11 &lt;-<span class="st"> </span>fields<span class="op">::</span><span class="kw">rdist</span>(locs)
 dist21 &lt;-<span class="st"> </span>fields<span class="op">::</span><span class="kw">rdist</span>(newlocs, locs)
 dist22 &lt;-<span class="st"> </span>fields<span class="op">::</span><span class="kw">rdist</span>(newlocs)</code></pre></div>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">sample_xstar &lt;-<span class="st"> </span><span class="kw">nimbleFunction</span>({
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">sample_xstar &lt;-<span class="st"> </span><span class="kw">nimbleFunction</span>(
   <span class="co"># need types for inputs</span>
-  run =<span class="st"> </span><span class="cf">function</span>(<span class="dt">x =</span> <span class="kw">double</span>(<span class="dv">1</span>), <span class="dt">mu =</span> <span class="kw">double</span>(<span class="dv">1</span>), <span class="dt">muNew =</span> <span class="kw">double</span>(<span class="dv">1</span>), <span class="dt">sigma =</span> <span class="kw">double</span>(<span class="dv">0</span>), <span class="dt">rho =</span> <span class="kw">double</span>(<span class="dv">0</span>), 
+  <span class="dt">run =</span> <span class="cf">function</span>(<span class="dt">x =</span> <span class="kw">double</span>(<span class="dv">1</span>), <span class="dt">mu =</span> <span class="kw">double</span>(<span class="dv">1</span>), <span class="dt">muNew =</span> <span class="kw">double</span>(<span class="dv">1</span>), <span class="dt">sigma =</span> <span class="kw">double</span>(<span class="dv">0</span>), <span class="dt">rho =</span> <span class="kw">double</span>(<span class="dv">0</span>), 
                  <span class="dt">dist11 =</span> <span class="kw">double</span>(<span class="dv">2</span>), <span class="dt">dist22 =</span> <span class="kw">double</span>(<span class="dv">2</span>), <span class="dt">dist21 =</span> <span class="kw">double</span>(<span class="dv">2</span>)) {
     <span class="kw">returnType</span>(<span class="kw">double</span>(<span class="dv">1</span>))
     n &lt;-<span class="st"> </span><span class="kw">length</span>(muNew)
@@ -668,27 +668,26 @@ dist22 &lt;-<span class="st"> </span>fields<span class="op">::</span><span class
     C21 &lt;-<span class="st"> </span>sigma2 <span class="op">*</span><span class="st"> </span><span class="kw">exp</span>(<span class="op">-</span>dist21 <span class="op">/</span><span class="st"> </span>rho)
     <span class="co"># Note that this could be made a bit more efficient by using the Cholesky</span>
     <span class="co"># decomposition rather than solve().</span>
-    xstar &lt;-<span class="st"> </span>munew <span class="op">+</span><span class="st"> </span>(C21 <span class="op">%*%</span><span class="st"> </span><span class="kw">solve</span>(C11, x <span class="op">-</span><span class="st"> </span>mu))[,<span class="dv">1</span>]
+    xstar &lt;-<span class="st"> </span>muNew <span class="op">+</span><span class="st"> </span>(C21 <span class="op">%*%</span><span class="st"> </span><span class="kw">solve</span>(C11, x <span class="op">-</span><span class="st"> </span>mu))[,<span class="dv">1</span>]
     xstar &lt;-<span class="st"> </span>xstar <span class="op">+</span><span class="st"> </span>(<span class="kw">t</span>(<span class="kw">chol</span>(C22 <span class="op">-</span><span class="st"> </span>C21 <span class="op">%*%</span><span class="st"> </span><span class="kw">solve</span>(C11, <span class="kw">t</span>(C21)))) <span class="op">%*%</span><span class="st"> </span><span class="kw">rnorm</span>(n))[,<span class="dv">1</span>]
     <span class="kw">return</span>(xstar)
-  }
-})
+    })
 
 get_samples &lt;-<span class="st"> </span><span class="kw">nimbleFunction</span>(
   <span class="dt">run =</span> <span class="cf">function</span>(<span class="dt">samples =</span> <span class="kw">double</span>(<span class="dv">2</span>), <span class="dt">z =</span> <span class="kw">double</span>(<span class="dv">1</span>), <span class="dt">zNew =</span> <span class="kw">double</span>(<span class="dv">1</span>), 
                  <span class="dt">dist11 =</span> <span class="kw">double</span>(<span class="dv">2</span>), <span class="dt">dist22 =</span> <span class="kw">double</span>(<span class="dv">2</span>), <span class="dt">dist21 =</span> <span class="kw">double</span>(<span class="dv">2</span>)) {
     <span class="kw">returnType</span>(<span class="kw">double</span>(<span class="dv">2</span>))
     m &lt;-<span class="st"> </span><span class="kw">dim</span>(samples)[<span class="dv">1</span>]
-    nstar &lt;-<span class="st"> </span><span class="kw">dim</span>(dst21)[<span class="dv">2</span>]
+    nstar &lt;-<span class="st"> </span><span class="kw">dim</span>(dist21)[<span class="dv">1</span>]
     output &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="dv">0</span>, <span class="dt">nrow =</span> m, <span class="dt">ncol =</span> nstar)
     <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span>m) {
       <span class="co"># Extract parameter values from the input matrix based on numeric column indexes.</span>
       <span class="co"># Inelegant because hard-coded based on looking at column names of samples matrix.</span>
-      mu0 &lt;-<span class="st"> </span>output[i, <span class="dv">2</span>]
-      beta &lt;-<span class="st"> </span>output[i, <span class="dv">1</span>]
-      rho &lt;-<span class="st"> </span>output[i, <span class="dv">3</span>]
-      sigma &lt;-<span class="st"> </span>output[i, <span class="dv">4</span>]
-      x &lt;-<span class="st"> </span>output[i, <span class="dv">5</span><span class="op">:</span><span class="dv">138</span>]
+      mu0 &lt;-<span class="st"> </span>samples[i, <span class="dv">2</span>]
+      beta &lt;-<span class="st"> </span>samples[i, <span class="dv">1</span>]
+      rho &lt;-<span class="st"> </span>samples[i, <span class="dv">3</span>]
+      sigma &lt;-<span class="st"> </span>samples[i, <span class="dv">4</span>]
+      x &lt;-<span class="st"> </span>samples[i, <span class="dv">5</span><span class="op">:</span><span class="dv">138</span>]
       mu &lt;-<span class="st"> </span>mu0 <span class="op">+</span><span class="st"> </span>beta<span class="op">*</span>z
       muNew &lt;-<span class="st"> </span>mu0 <span class="op">+</span><span class="st"> </span>beta<span class="op">*</span>zNew
       <span class="co"># Get other parameters</span>
@@ -698,10 +697,14 @@ get_samples &lt;-<span class="st"> </span><span class="kw">nimbleFunction</span>
   }
 )
 
+zNew &lt;-<span class="st"> </span><span class="kw">runif</span>(<span class="dv">3</span>)  <span class="co"># fake new z values</span>
+
 ## Now compare uncompiled and compiled speed of carrying out the sampling.
-xstar_samples &lt;-<span class="st"> </span><span class="kw">get_samples</span>(samples, z, zNew, dist11, dist22, dist21)
+<span class="kw">set.seed</span>(<span class="dv">1</span>)
+xstar_samples &lt;-<span class="st"> </span><span class="kw">get_samples</span>(samples, constants<span class="op">$</span>z, zNew, dist11, dist22, dist21)
 cget_samples &lt;-<span class="st"> </span><span class="kw">compileNimble</span>(get_samples)
-xstar_samples2 &lt;-<span class="st"> </span><span class="kw">cget_samples</span>(samples, z, Znew, dist11, dist22, dist21)</code></pre></div>
+<span class="kw">set.seed</span>(<span class="dv">1</span>)
+xstar_samples2 &lt;-<span class="st"> </span><span class="kw">cget_samples</span>(samples, constants<span class="op">$</span>z, zNew, dist11, dist22, dist21)</code></pre></div>
 <p>We could also write this to use the <code>mvSamples</code> modelValues object that stores all the MCMC output instead of using the R matrix representation of the samples.</p>
 <p>We’ll see various approaches to post hoc processing in Module 9b.</p>
 </div>

@@ -102,7 +102,7 @@ DEmodel &lt;-<span class="st"> </span><span class="kw">nimbleModel</span>(DEcode
 </div>
 <div id="design-of-nimbles-mcmc-system" class="slide section level1">
 <h1>Design of <code>nimble</code>’s MCMC system</h1>
-<p>Here is a figure of MCMC configuration and MCMCs:<a href="nimble_MCMC_design.pdf" class="uri">nimble_MCMC_design.pdf</a></p>
+<p>Here is a figure of MCMC configuration and MCMCs: <a href="nimble_MCMC_design.pdf" class="uri">nimble_MCMC_design.pdf</a></p>
 <ol style="list-style-type: decimal">
 <li>MCMC configuration object: Contains a list of sampler assignments, not actual samplers.</li>
 <li>MCMC object: Contains a list of sampler objects.</li>
@@ -218,7 +218,7 @@ DEmodel &lt;-<span class="st"> </span><span class="kw">nimbleModel</span>(DEcode
     <span class="co"># Alternative:</span>
     <span class="co"># logAcceptanceRatio &lt;- model$calculateDiff(calcNodes)</span>
     accept &lt;-<span class="st"> </span><span class="kw">decide</span>(logMHR)                                          <span class="co"># utility function to generate accept/reject decision</span>
-    <span class="cf">if</span>(accept)                                                        <span class="co"># accept synchronize model -&gt; mvSaved</span>
+    <span class="cf">if</span>(accept)                                                        <span class="co"># accept: synchronize model -&gt; mvSaved</span>
       <span class="kw">copy</span>(<span class="dt">from =</span> model, <span class="dt">to =</span> mvSaved, <span class="dt">row =</span> <span class="dv">1</span>, <span class="dt">nodes =</span> calcNodes, <span class="dt">logProb =</span> <span class="ot">TRUE</span>)
     <span class="cf">else</span>                                                              <span class="co"># reject: synchronize mvSaved -&gt; model</span>
       <span class="kw">copy</span>(<span class="dt">from =</span> mvSaved, <span class="dt">to =</span> model, <span class="dt">row =</span> <span class="dv">1</span>, <span class="dt">nodes =</span> calcNodes, <span class="dt">logProb =</span> <span class="ot">TRUE</span>)
@@ -518,7 +518,7 @@ cmcmc<span class="op">$</span>run</code></pre></div>
 ##     ans &lt;- invisible(NULL)
 ##     ans
 ## }
-## &lt;environment: 0x55e4a0030eb0&gt;</code></pre>
+## &lt;environment: 0x5560114bf290&gt;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## See where our sampler of interest is in the sampler configuration list
 mcmcConf<span class="op">$</span><span class="kw">printSamplers</span>()</code></pre></div>
 <pre><code>## [1]  RW sampler: sex_int[1]
@@ -649,8 +649,8 @@ cmcmc<span class="op">$</span>samplerFunctions</code></pre></div>
 ## function () 
 ## {
 ## }
-## &lt;bytecode: 0x55e49f637428&gt;
-## &lt;environment: 0x55e49afb1280&gt;
+## &lt;bytecode: 0x556010df8958&gt;
+## &lt;environment: 0x55600c789010&gt;
 ## Field &quot;CobjectInterface&quot;:
 ## An object of class &quot;uninitializedField&quot;
 ## Slot &quot;field&quot;:
@@ -703,11 +703,11 @@ cmcmc<span class="op">$</span>mvSaved[[<span class="st">'farm_effect'</span>]]</
 ## we did &quot;by hand&quot;, only iterations via cmcmc$run(), or runMCMC, which calls
 ## cmcmc$run).
 cmcmc<span class="op">$</span><span class="kw">getTimes</span>()</code></pre></div>
-<pre><code>##  [1] 0.054219 0.043700 0.052122 0.043678 0.002373 0.002817 0.004988
-##  [8] 0.007210 0.002540 0.010147 0.001038 0.002774 0.004629 0.003876
-## [15] 0.004682 0.022999 0.004110 0.003220 0.005175 0.007884 0.003133
-## [22] 0.003618 0.004225 0.001248 0.004001 0.003017 0.003672 0.002381
-## [29] 0.001677 0.098883</code></pre>
+<pre><code>##  [1] 0.053454 0.042886 0.050297 0.042801 0.002452 0.002907 0.004754
+##  [8] 0.006727 0.002485 0.010318 0.001045 0.002844 0.004670 0.003902
+## [15] 0.004678 0.022751 0.003877 0.003114 0.004941 0.007543 0.003111
+## [22] 0.003585 0.004190 0.001266 0.003772 0.002989 0.003656 0.002394
+## [29] 0.001715 0.097557</code></pre>
 </div>
 <div id="lets-make-an-interesting-sampler-4" class="slide section level1">
 <h1>Let’s make an interesting sampler (4)</h1>
@@ -767,7 +767,7 @@ mcmcResults_ourSamples &lt;-<span class="st"> </span><span class="kw">compareMCM
 </div>
 <div id="recall-our-use-of-modelvalues-in-samplers-and-mcmcs" class="slide section level1">
 <h1>Recall our use of modelValues in samplers and MCMCs</h1>
-<p>We used a “1-row” modelValues called <code>mvSaved</code> that has the current state of the model.</p>
+<p>We used a “one-row” modelValues called <code>mvSaved</code> that has the current state of the model.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="cf">if</span>(jump) {
   <span class="kw">nimCopy</span>(<span class="dt">from =</span> model, <span class="dt">to =</span> mvSaved, <span class="dt">row =</span> <span class="dv">1</span>, <span class="dt">nodes =</span> target, <span class="dt">logProb =</span> <span class="ot">TRUE</span>)
   <span class="kw">nimCopy</span>(<span class="dt">from =</span> model, <span class="dt">to =</span> mvSaved, <span class="dt">row =</span> <span class="dv">1</span>, <span class="dt">nodes =</span> calcNodesNoSelfDeterm, <span class="dt">logProb =</span> <span class="ot">FALSE</span>)
@@ -875,7 +875,7 @@ vars</code></pre></div>
 }
 })</code></pre></div>
 <pre><code>##    user  system elapsed 
-##   1.238   0.004   1.243</code></pre>
+##   1.229   0.000   1.230</code></pre>
 </div>
 <div id="posterior-predictive-sampling-in-r-2" class="slide section level1">
 <h1>Posterior predictive sampling in R (2)</h1>
@@ -1016,7 +1016,7 @@ y &lt;-<span class="st"> </span>faithful<span class="op">$</span>waiting
 <pre><code>## |-------------|-------------|-------------|-------------|
 ## |-------------------------------------------------------|</code></pre>
 <pre><code>##    user  system elapsed 
-##   1.027   0.000   1.027</code></pre>
+##   1.016   0.000   1.016</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">nm &lt;-<span class="st"> </span><span class="kw">colnames</span>(paramSamples)
 <span class="kw">par</span>(<span class="dt">mfrow =</span> <span class="kw">c</span>(<span class="dv">2</span>, <span class="dv">3</span>))
 <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="kw">ncol</span>(paramSamples))
@@ -1072,7 +1072,7 @@ model_full &lt;-<span class="st"> </span><span class="kw">nimbleModel</span>(cod
 <pre><code>## |-------------|-------------|-------------|-------------|
 ## |-------------------------------------------------------|</code></pre>
 <pre><code>##    user  system elapsed 
-##    1.13    0.00    1.13</code></pre>
+##   1.177   0.004   1.182</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">nm &lt;-<span class="st"> </span><span class="kw">colnames</span>(paramSamples2)
 <span class="kw">par</span>(<span class="dt">mfrow =</span> <span class="kw">c</span>(<span class="dv">2</span>, <span class="dv">5</span>))
 <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="dv">10</span>)
@@ -1195,7 +1195,7 @@ cModel_full<span class="op">$</span>xi &lt;-<span class="st"> </span><span class
 cLatentSampler_full<span class="op">$</span><span class="kw">run</span>(paramSamples)
 })</code></pre></div>
 <pre><code>##    user  system elapsed 
-##   0.775   0.000   0.775</code></pre>
+##   0.822   0.000   0.822</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">latentSamples &lt;-<span class="st"> </span><span class="kw">as.matrix</span>(cLatentSampler_full<span class="op">$</span>mvSamplesLatent)
 
 <span class="kw">par</span>(<span class="dt">mfrow =</span> <span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">1</span>))
@@ -1204,7 +1204,7 @@ cLatentSampler_full<span class="op">$</span><span class="kw">run</span>(paramSam
 </div>
 <div id="using-the-compiled-mcmc-mvsamples" class="slide section level1">
 <h1>Using the compiled MCMC <code>mvSamples</code></h1>
-<p>Here’s a slick way to make use of the samples stored in the original marginal MCMC. We pass the <code>mvSamples</code> from that MCMC into the latent sampler generator. <code>nimble</code> figures out how to compile everything together and uses the samples stored in that original MCMC.</p>
+<p>Here’s a slick way to make use of the samples stored in the original marginal MCMC. We pass the <code>mvSamples</code> from that MCMC in as a latent sampler setup argument. <code>nimble</code> figures out how to compile everything together and uses the samples stored in that original MCMC.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">latentSampler2 &lt;-<span class="st"> </span><span class="kw">nimbleFunction</span>(
             <span class="dt">setup =</span> <span class="cf">function</span>(fullModel, mvSamplesParam, target) {
                   ## target contains the nodes that have been integrated over that we want to sample from
@@ -1238,7 +1238,8 @@ cLatentSampler_full<span class="op">$</span><span class="kw">run</span>(paramSam
                  ## sample integrated-over nodes once per thinned iteration of original MCMC
                  <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span>nIts) {
                       <span class="kw">nimCopy</span>(mvSamplesParam, fullModel, <span class="dt">row =</span> i, sampledVars)
-                      fullModel<span class="op">$</span><span class="kw">calculate</span>()  <span class="co"># samplers assumes initial logProb, deterministic states are up-to-date</span>
+                      fullModel<span class="op">$</span><span class="kw">calculate</span>()  <span class="co"># samplers assume initial logProb, deterministic states are up-to-date</span>
+                      <span class="co"># so we need an up-to-date model before doing the single MCMC step</span>
                       mcmc<span class="op">$</span><span class="kw">run</span>(<span class="dv">1</span>, <span class="dt">reset =</span> <span class="ot">FALSE</span>, <span class="dt">progressBar =</span> <span class="ot">FALSE</span>)
                       <span class="kw">nimCopy</span>(fullModel, mvSamplesLatent, <span class="dt">nodes =</span> targetNodes, <span class="dt">row =</span> i)
                  }
@@ -1261,7 +1262,7 @@ latentSampler2_full &lt;-<span class="st"> </span><span class="kw">latentSampler
 cLatentSampler2_full<span class="op">$</span><span class="kw">run</span>(<span class="kw">nrow</span>(paramSamples))
 })</code></pre></div>
 <pre><code>##    user  system elapsed 
-##   0.800   0.004   0.804</code></pre>
+##   0.811   0.000   0.812</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">latentSamples2 &lt;-<span class="st"> </span><span class="kw">as.matrix</span>(cLatentSampler2_full<span class="op">$</span>mvSamplesLatent)
 
 <span class="kw">identical</span>(latentSamples, latentSamples2)  <span class="co"># great!</span></code></pre></div>

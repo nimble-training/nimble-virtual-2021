@@ -786,7 +786,7 @@ plot(respiratorydata_sp, col = col, border = 'grey', lwd = 0.4)</code></pre>
 dist11 &lt;- fields::rdist(locs)
 dist21 &lt;- fields::rdist(newlocs, locs)
 dist22 &lt;- fields::rdist(newlocs)</code></pre>
-<pre class="r"><code>sample_xstar &lt;- nimbleFunction({
+<pre class="r"><code>sample_xstar &lt;- nimbleFunction(
   # need types for inputs
   run = function(x = double(1), mu = double(1), muNew = double(1), sigma = double(0), rho = double(0), 
                  dist11 = double(2), dist22 = double(2), dist21 = double(2)) {
@@ -798,27 +798,26 @@ dist22 &lt;- fields::rdist(newlocs)</code></pre>
     C21 &lt;- sigma2 * exp(-dist21 / rho)
     # Note that this could be made a bit more efficient by using the Cholesky
     # decomposition rather than solve().
-    xstar &lt;- munew + (C21 %*% solve(C11, x - mu))[,1]
+    xstar &lt;- muNew + (C21 %*% solve(C11, x - mu))[,1]
     xstar &lt;- xstar + (t(chol(C22 - C21 %*% solve(C11, t(C21)))) %*% rnorm(n))[,1]
     return(xstar)
-  }
-})
+    })
 
 get_samples &lt;- nimbleFunction(
   run = function(samples = double(2), z = double(1), zNew = double(1), 
                  dist11 = double(2), dist22 = double(2), dist21 = double(2)) {
     returnType(double(2))
     m &lt;- dim(samples)[1]
-    nstar &lt;- dim(dst21)[2]
+    nstar &lt;- dim(dist21)[1]
     output &lt;- matrix(0, nrow = m, ncol = nstar)
     for(i in 1:m) {
       # Extract parameter values from the input matrix based on numeric column indexes.
       # Inelegant because hard-coded based on looking at column names of samples matrix.
-      mu0 &lt;- output[i, 2]
-      beta &lt;- output[i, 1]
-      rho &lt;- output[i, 3]
-      sigma &lt;- output[i, 4]
-      x &lt;- output[i, 5:138]
+      mu0 &lt;- samples[i, 2]
+      beta &lt;- samples[i, 1]
+      rho &lt;- samples[i, 3]
+      sigma &lt;- samples[i, 4]
+      x &lt;- samples[i, 5:138]
       mu &lt;- mu0 + beta*z
       muNew &lt;- mu0 + beta*zNew
       # Get other parameters
@@ -828,10 +827,14 @@ get_samples &lt;- nimbleFunction(
   }
 )
 
+zNew &lt;- runif(3)  # fake new z values
+
 ## Now compare uncompiled and compiled speed of carrying out the sampling.
-xstar_samples &lt;- get_samples(samples, z, zNew, dist11, dist22, dist21)
+set.seed(1)
+xstar_samples &lt;- get_samples(samples, constants$z, zNew, dist11, dist22, dist21)
 cget_samples &lt;- compileNimble(get_samples)
-xstar_samples2 &lt;- cget_samples(samples, z, Znew, dist11, dist22, dist21)</code></pre>
+set.seed(1)
+xstar_samples2 &lt;- cget_samples(samples, constants$z, zNew, dist11, dist22, dist21)</code></pre>
 <p>We could also write this to use the <code>mvSamples</code> modelValues object that stores all the MCMC output instead of using the R matrix representation of the samples.</p>
 <p>We’ll see various approaches to post hoc processing in Module 9b.</p>
 </div>

@@ -228,7 +228,7 @@ DEmodel &lt;- nimbleModel(DEcode,
 </div>
 <div id="design-of-nimbles-mcmc-system" class="section level1">
 <h1>Design of <code>nimble</code>’s MCMC system</h1>
-<p>Here is a figure of MCMC configuration and MCMCs:<a href="nimble_MCMC_design.pdf" class="uri">nimble_MCMC_design.pdf</a></p>
+<p>Here is a figure of MCMC configuration and MCMCs: <a href="nimble_MCMC_design.pdf" class="uri">nimble_MCMC_design.pdf</a></p>
 <ol style="list-style-type: decimal">
 <li>MCMC configuration object: Contains a list of sampler assignments, not actual samplers.</li>
 <li>MCMC object: Contains a list of sampler objects.</li>
@@ -346,7 +346,7 @@ class(fe1_sampler)</code></pre>
     # Alternative:
     # logAcceptanceRatio &lt;- model$calculateDiff(calcNodes)
     accept &lt;- decide(logMHR)                                          # utility function to generate accept/reject decision
-    if(accept)                                                        # accept synchronize model -&gt; mvSaved
+    if(accept)                                                        # accept: synchronize model -&gt; mvSaved
       copy(from = model, to = mvSaved, row = 1, nodes = calcNodes, logProb = TRUE)
     else                                                              # reject: synchronize mvSaved -&gt; model
       copy(from = mvSaved, to = model, row = 1, nodes = calcNodes, logProb = TRUE)
@@ -652,7 +652,7 @@ cmcmc$run</code></pre>
 ##     ans &lt;- invisible(NULL)
 ##     ans
 ## }
-## &lt;environment: 0x55e4a3b43a00&gt;</code></pre>
+## &lt;environment: 0x5560152a3350&gt;</code></pre>
 <pre class="r"><code>## See where our sampler of interest is in the sampler configuration list
 mcmcConf$printSamplers()</code></pre>
 <pre><code>## [1]  RW sampler: sex_int[1]
@@ -783,8 +783,8 @@ cmcmc$samplerFunctions</code></pre>
 ## function () 
 ## {
 ## }
-## &lt;bytecode: 0x55e49f637428&gt;
-## &lt;environment: 0x55e49afb1280&gt;
+## &lt;bytecode: 0x556010df8958&gt;
+## &lt;environment: 0x55600c789010&gt;
 ## Field &quot;CobjectInterface&quot;:
 ## An object of class &quot;uninitializedField&quot;
 ## Slot &quot;field&quot;:
@@ -837,11 +837,11 @@ cmcmc$mvSaved[['farm_effect']]</code></pre>
 ## we did &quot;by hand&quot;, only iterations via cmcmc$run(), or runMCMC, which calls
 ## cmcmc$run).
 cmcmc$getTimes()</code></pre>
-<pre><code>##  [1] 0.055106 0.044793 0.053636 0.044612 0.002426 0.002995 0.005047
-##  [8] 0.006992 0.002521 0.010762 0.001113 0.003059 0.005142 0.004217
-## [15] 0.005037 0.023841 0.004196 0.003327 0.005387 0.008020 0.003467
-## [22] 0.003903 0.004613 0.001372 0.004317 0.003315 0.003858 0.002591
-## [29] 0.001789 0.103517</code></pre>
+<pre><code>##  [1] 0.059763 0.049072 0.057649 0.048955 0.002798 0.003376 0.005588
+##  [8] 0.007917 0.002930 0.011633 0.001242 0.003258 0.005260 0.004514
+## [15] 0.005592 0.026214 0.004701 0.003809 0.005959 0.008999 0.003736
+## [22] 0.004193 0.004978 0.001581 0.004529 0.003612 0.004319 0.002820
+## [29] 0.002062 0.111959</code></pre>
 </div>
 <div id="lets-make-an-interesting-sampler-4" class="section level1">
 <h1>Let’s make an interesting sampler (4)</h1>
@@ -901,7 +901,7 @@ make_MCMC_comparison_pages(mcmcResults_ourSamples, modelName = &quot;custom_samp
 </div>
 <div id="recall-our-use-of-modelvalues-in-samplers-and-mcmcs" class="section level1">
 <h1>Recall our use of modelValues in samplers and MCMCs</h1>
-<p>We used a “1-row” modelValues called <code>mvSaved</code> that has the current state of the model.</p>
+<p>We used a “one-row” modelValues called <code>mvSaved</code> that has the current state of the model.</p>
 <pre class="r"><code>if(jump) {
   nimCopy(from = model, to = mvSaved, row = 1, nodes = target, logProb = TRUE)
   nimCopy(from = model, to = mvSaved, row = 1, nodes = calcNodesNoSelfDeterm, logProb = FALSE)
@@ -1009,7 +1009,7 @@ for(i in seq_len(niter)) {
 }
 })</code></pre>
 <pre><code>##    user  system elapsed 
-##   1.281   0.000   1.280</code></pre>
+##   1.273   0.000   1.272</code></pre>
 </div>
 <div id="posterior-predictive-sampling-in-r-2" class="section level1">
 <h1>Posterior predictive sampling in R (2)</h1>
@@ -1147,7 +1147,7 @@ system.time(paramSamples &lt;- runMCMC(cmcmc_marg, niter = 5000, nburnin = 1000)
 <pre><code>## |-------------|-------------|-------------|-------------|
 ## |-------------------------------------------------------|</code></pre>
 <pre><code>##    user  system elapsed 
-##   1.098   0.000   1.097</code></pre>
+##   1.014   0.000   1.014</code></pre>
 <pre class="r"><code>nm &lt;- colnames(paramSamples)
 par(mfrow = c(2, 3))
 for(i in 1:ncol(paramSamples))
@@ -1203,7 +1203,7 @@ system.time(paramSamples2 &lt;- runMCMC(cmcmc_full, niter = 5000, nburnin = 1000
 <pre><code>## |-------------|-------------|-------------|-------------|
 ## |-------------------------------------------------------|</code></pre>
 <pre><code>##    user  system elapsed 
-##   1.126   0.008   1.135</code></pre>
+##   1.189   0.000   1.188</code></pre>
 <pre class="r"><code>nm &lt;- colnames(paramSamples2)
 par(mfrow = c(2, 5))
 for(i in 1:10)
@@ -1326,7 +1326,7 @@ system.time({
 cLatentSampler_full$run(paramSamples)
 })</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.779   0.000   0.779</code></pre>
+##   0.755   0.000   0.756</code></pre>
 <pre class="r"><code>latentSamples &lt;- as.matrix(cLatentSampler_full$mvSamplesLatent)
 
 par(mfrow = c(1, 1))
@@ -1335,7 +1335,7 @@ plot(y, colMeans(latentSamples))</code></pre>
 </div>
 <div id="using-the-compiled-mcmc-mvsamples" class="section level1">
 <h1>Using the compiled MCMC <code>mvSamples</code></h1>
-<p>Here’s a slick way to make use of the samples stored in the original marginal MCMC. We pass the <code>mvSamples</code> from that MCMC into the latent sampler generator. <code>nimble</code> figures out how to compile everything together and uses the samples stored in that original MCMC.</p>
+<p>Here’s a slick way to make use of the samples stored in the original marginal MCMC. We pass the <code>mvSamples</code> from that MCMC in as a latent sampler setup argument. <code>nimble</code> figures out how to compile everything together and uses the samples stored in that original MCMC.</p>
 <pre class="r"><code>latentSampler2 &lt;- nimbleFunction(
             setup = function(fullModel, mvSamplesParam, target) {
                   ## target contains the nodes that have been integrated over that we want to sample from
@@ -1369,7 +1369,8 @@ plot(y, colMeans(latentSamples))</code></pre>
                  ## sample integrated-over nodes once per thinned iteration of original MCMC
                  for(i in 1:nIts) {
                       nimCopy(mvSamplesParam, fullModel, row = i, sampledVars)
-                      fullModel$calculate()  # samplers assumes initial logProb, deterministic states are up-to-date
+                      fullModel$calculate()  # samplers assume initial logProb, deterministic states are up-to-date
+                      # so we need an up-to-date model before doing the single MCMC step
                       mcmc$run(1, reset = FALSE, progressBar = FALSE)
                       nimCopy(fullModel, mvSamplesLatent, nodes = targetNodes, row = i)
                  }
@@ -1392,7 +1393,7 @@ system.time({
 cLatentSampler2_full$run(nrow(paramSamples))
 })</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.794   0.000   0.794</code></pre>
+##   0.832   0.000   0.831</code></pre>
 <pre class="r"><code>latentSamples2 &lt;- as.matrix(cLatentSampler2_full$mvSamplesLatent)
 
 identical(latentSamples, latentSamples2)  # great!</code></pre>

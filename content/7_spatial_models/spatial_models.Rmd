@@ -658,7 +658,7 @@ dist22 <- fields::rdist(newlocs)
 ```
 
 ```{r, eval=FALSE}
-sample_xstar <- nimbleFunction({
+sample_xstar <- nimbleFunction(
   # need types for inputs
   run = function(x = double(1), mu = double(1), muNew = double(1), sigma = double(0), rho = double(0), 
                  dist11 = double(2), dist22 = double(2), dist21 = double(2)) {
@@ -670,27 +670,26 @@ sample_xstar <- nimbleFunction({
     C21 <- sigma2 * exp(-dist21 / rho)
     # Note that this could be made a bit more efficient by using the Cholesky
     # decomposition rather than solve().
-    xstar <- munew + (C21 %*% solve(C11, x - mu))[,1]
+    xstar <- muNew + (C21 %*% solve(C11, x - mu))[,1]
     xstar <- xstar + (t(chol(C22 - C21 %*% solve(C11, t(C21)))) %*% rnorm(n))[,1]
     return(xstar)
-  }
-})
+    })
 
 get_samples <- nimbleFunction(
   run = function(samples = double(2), z = double(1), zNew = double(1), 
                  dist11 = double(2), dist22 = double(2), dist21 = double(2)) {
     returnType(double(2))
     m <- dim(samples)[1]
-    nstar <- dim(dst21)[2]
+    nstar <- dim(dist21)[1]
     output <- matrix(0, nrow = m, ncol = nstar)
     for(i in 1:m) {
       # Extract parameter values from the input matrix based on numeric column indexes.
       # Inelegant because hard-coded based on looking at column names of samples matrix.
-      mu0 <- output[i, 2]
-      beta <- output[i, 1]
-      rho <- output[i, 3]
-      sigma <- output[i, 4]
-      x <- output[i, 5:138]
+      mu0 <- samples[i, 2]
+      beta <- samples[i, 1]
+      rho <- samples[i, 3]
+      sigma <- samples[i, 4]
+      x <- samples[i, 5:138]
       mu <- mu0 + beta*z
       muNew <- mu0 + beta*zNew
       # Get other parameters
@@ -700,10 +699,14 @@ get_samples <- nimbleFunction(
   }
 )
 
+zNew <- runif(3)  # fake new z values
+
 ## Now compare uncompiled and compiled speed of carrying out the sampling.
-xstar_samples <- get_samples(samples, z, zNew, dist11, dist22, dist21)
+set.seed(1)
+xstar_samples <- get_samples(samples, constants$z, zNew, dist11, dist22, dist21)
 cget_samples <- compileNimble(get_samples)
-xstar_samples2 <- cget_samples(samples, z, Znew, dist11, dist22, dist21)
+set.seed(1)
+xstar_samples2 <- cget_samples(samples, constants$z, zNew, dist11, dist22, dist21)
 ```
 
 We could also write this to use the `mvSamples` modelValues object that stores all the MCMC output instead of using the R matrix representation of the samples.

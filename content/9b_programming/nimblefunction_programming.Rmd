@@ -54,7 +54,7 @@ DEmodel <- nimbleModel(DEcode,
 # Design of `nimble`'s MCMC system
 
 
-Here is a figure of MCMC configuration and MCMCs:[nimble_MCMC_design.pdf](nimble_MCMC_design.pdf)
+Here is a figure of MCMC configuration and MCMCs: [nimble_MCMC_design.pdf](nimble_MCMC_design.pdf)
 
 1. MCMC configuration object: Contains a list of sampler assignments, not actual samplers.
 2. MCMC object: Contains a list of sampler objects.
@@ -135,7 +135,7 @@ ourMH <- nimbleFunction(
     # Alternative:
     # logAcceptanceRatio <- model$calculateDiff(calcNodes)
     accept <- decide(logMHR)                                          # utility function to generate accept/reject decision
-    if(accept)                                                        # accept synchronize model -> mvSaved
+    if(accept)                                                        # accept: synchronize model -> mvSaved
       copy(from = model, to = mvSaved, row = 1, nodes = calcNodes, logProb = TRUE)
     else                                                              # reject: synchronize mvSaved -> model
       copy(from = mvSaved, to = model, row = 1, nodes = calcNodes, logProb = TRUE)
@@ -498,7 +498,7 @@ Results if you run it yourself are [here](custom_sampler_results.html)
 
 # Recall our use of modelValues in samplers and MCMCs
 
-We used a "1-row" modelValues called `mvSaved` that has the current state of the model.
+We used a "one-row" modelValues called `mvSaved` that has the current state of the model.
 
 ```{r, eval=FALSE}
 if(jump) {
@@ -878,7 +878,7 @@ plot(y, colMeans(latentSamples))
 # Using the compiled MCMC `mvSamples`
 
 Here's a slick way to make use of the samples stored in the original marginal MCMC. We pass the `mvSamples` from that MCMC
-into the latent sampler generator. `nimble` figures out how to compile everything together and uses the samples stored
+in as a latent sampler setup argument. `nimble` figures out how to compile everything together and uses the samples stored
 in that original MCMC.
 
 ```{r}
@@ -915,7 +915,8 @@ latentSampler2 <- nimbleFunction(
                  ## sample integrated-over nodes once per thinned iteration of original MCMC
                  for(i in 1:nIts) {
                       nimCopy(mvSamplesParam, fullModel, row = i, sampledVars)
-                      fullModel$calculate()  # samplers assumes initial logProb, deterministic states are up-to-date
+                      fullModel$calculate()  # samplers assume initial logProb, deterministic states are up-to-date
+                      # so we need an up-to-date model before doing the single MCMC step
                       mcmc$run(1, reset = FALSE, progressBar = FALSE)
                       nimCopy(fullModel, mvSamplesLatent, nodes = targetNodes, row = i)
                  }
