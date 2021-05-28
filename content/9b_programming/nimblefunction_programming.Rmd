@@ -131,10 +131,10 @@ ourMH <- nimbleFunction(
     proposalValue <- rnorm(1, mean = currentValue, sd = scale)        # generate proposal value
     model[[target]] <<- proposalValue                                 # put proposal value in model
     proposalLogProb <- model$calculate(calcNodes)                     # calculate log "numerator" 
-    logAcceptanceRatio <- currentLogProb - proposalLogProb            # log acceptance ratio
+    logAcceptanceRatio <- proposalLogProb - currentLogProb            # log acceptance ratio
     # Alternative:
     # logAcceptanceRatio <- model$calculateDiff(calcNodes)
-    accept <- decide(logMHR)                                          # utility function to generate accept/reject decision
+    accept <- decide(logAcceptanceRatio)                                          # utility function to generate accept/reject decision
     if(accept)                                                        # accept: synchronize model -> mvSaved
       copy(from = model, to = mvSaved, row = 1, nodes = calcNodes, logProb = TRUE)
     else                                                              # reject: synchronize mvSaved -> model

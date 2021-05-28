@@ -342,10 +342,10 @@ class(fe1_sampler)</code></pre>
     proposalValue &lt;- rnorm(1, mean = currentValue, sd = scale)        # generate proposal value
     model[[target]] &lt;&lt;- proposalValue                                 # put proposal value in model
     proposalLogProb &lt;- model$calculate(calcNodes)                     # calculate log &quot;numerator&quot; 
-    logAcceptanceRatio &lt;- currentLogProb - proposalLogProb            # log acceptance ratio
+    logAcceptanceRatio &lt;- proposalLogProb - currentLogProb            # log acceptance ratio
     # Alternative:
     # logAcceptanceRatio &lt;- model$calculateDiff(calcNodes)
-    accept &lt;- decide(logMHR)                                          # utility function to generate accept/reject decision
+    accept &lt;- decide(logAcceptanceRatio)                                          # utility function to generate accept/reject decision
     if(accept)                                                        # accept: synchronize model -&gt; mvSaved
       copy(from = model, to = mvSaved, row = 1, nodes = calcNodes, logProb = TRUE)
     else                                                              # reject: synchronize mvSaved -&gt; model
@@ -652,7 +652,7 @@ cmcmc$run</code></pre>
 ##     ans &lt;- invisible(NULL)
 ##     ans
 ## }
-## &lt;environment: 0x5560152a3350&gt;</code></pre>
+## &lt;environment: 0x55e1b1896678&gt;</code></pre>
 <pre class="r"><code>## See where our sampler of interest is in the sampler configuration list
 mcmcConf$printSamplers()</code></pre>
 <pre><code>## [1]  RW sampler: sex_int[1]
@@ -783,8 +783,8 @@ cmcmc$samplerFunctions</code></pre>
 ## function () 
 ## {
 ## }
-## &lt;bytecode: 0x556010df8958&gt;
-## &lt;environment: 0x55600c789010&gt;
+## &lt;bytecode: 0x55e1ad1eceb0&gt;
+## &lt;environment: 0x55e1a8b749d0&gt;
 ## Field &quot;CobjectInterface&quot;:
 ## An object of class &quot;uninitializedField&quot;
 ## Slot &quot;field&quot;:
@@ -837,11 +837,11 @@ cmcmc$mvSaved[['farm_effect']]</code></pre>
 ## we did &quot;by hand&quot;, only iterations via cmcmc$run(), or runMCMC, which calls
 ## cmcmc$run).
 cmcmc$getTimes()</code></pre>
-<pre><code>##  [1] 0.059763 0.049072 0.057649 0.048955 0.002798 0.003376 0.005588
-##  [8] 0.007917 0.002930 0.011633 0.001242 0.003258 0.005260 0.004514
-## [15] 0.005592 0.026214 0.004701 0.003809 0.005959 0.008999 0.003736
-## [22] 0.004193 0.004978 0.001581 0.004529 0.003612 0.004319 0.002820
-## [29] 0.002062 0.111959</code></pre>
+<pre><code>##  [1] 0.057373 0.046245 0.055524 0.045429 0.002655 0.003179 0.005390
+##  [8] 0.007528 0.002753 0.010893 0.001206 0.003166 0.005219 0.004396
+## [15] 0.005145 0.024742 0.004315 0.003370 0.005367 0.008137 0.003454
+## [22] 0.003868 0.004574 0.001425 0.004273 0.003360 0.003964 0.002509
+## [29] 0.001828 0.105061</code></pre>
 </div>
 <div id="lets-make-an-interesting-sampler-4" class="section level1">
 <h1>Let’s make an interesting sampler (4)</h1>
@@ -1009,7 +1009,7 @@ for(i in seq_len(niter)) {
 }
 })</code></pre>
 <pre><code>##    user  system elapsed 
-##   1.273   0.000   1.272</code></pre>
+##   1.377   0.000   1.378</code></pre>
 </div>
 <div id="posterior-predictive-sampling-in-r-2" class="section level1">
 <h1>Posterior predictive sampling in R (2)</h1>
@@ -1078,7 +1078,7 @@ abline(v = min(yGamma), col = 'red')</code></pre>
 <pre class="r"><code>set.seed(1)
 system.time(ppSamples_via_nf &lt;- cppSampler_basic$run(samples))</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.001   0.000   0.001</code></pre>
+##   0.001   0.000   0.002</code></pre>
 <pre class="r"><code>identical(ppSamples, ppSamples_via_nf)</code></pre>
 <pre><code>## [1] TRUE</code></pre>
 <p>So we get exactly the same results (note the use of <code>set.seed</code>) but faster.</p>
@@ -1147,7 +1147,7 @@ system.time(paramSamples &lt;- runMCMC(cmcmc_marg, niter = 5000, nburnin = 1000)
 <pre><code>## |-------------|-------------|-------------|-------------|
 ## |-------------------------------------------------------|</code></pre>
 <pre><code>##    user  system elapsed 
-##   1.014   0.000   1.014</code></pre>
+##   1.035   0.004   1.039</code></pre>
 <pre class="r"><code>nm &lt;- colnames(paramSamples)
 par(mfrow = c(2, 3))
 for(i in 1:ncol(paramSamples))
@@ -1203,7 +1203,7 @@ system.time(paramSamples2 &lt;- runMCMC(cmcmc_full, niter = 5000, nburnin = 1000
 <pre><code>## |-------------|-------------|-------------|-------------|
 ## |-------------------------------------------------------|</code></pre>
 <pre><code>##    user  system elapsed 
-##   1.189   0.000   1.188</code></pre>
+##   1.145   0.008   1.153</code></pre>
 <pre class="r"><code>nm &lt;- colnames(paramSamples2)
 par(mfrow = c(2, 5))
 for(i in 1:10)
@@ -1326,7 +1326,7 @@ system.time({
 cLatentSampler_full$run(paramSamples)
 })</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.755   0.000   0.756</code></pre>
+##   0.775   0.000   0.775</code></pre>
 <pre class="r"><code>latentSamples &lt;- as.matrix(cLatentSampler_full$mvSamplesLatent)
 
 par(mfrow = c(1, 1))
@@ -1393,7 +1393,7 @@ system.time({
 cLatentSampler2_full$run(nrow(paramSamples))
 })</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.832   0.000   0.831</code></pre>
+##   0.792   0.000   0.792</code></pre>
 <pre class="r"><code>latentSamples2 &lt;- as.matrix(cLatentSampler2_full$mvSamplesLatent)
 
 identical(latentSamples, latentSamples2)  # great!</code></pre>

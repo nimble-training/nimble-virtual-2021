@@ -214,10 +214,10 @@ DEmodel &lt;-<span class="st"> </span><span class="kw">nimbleModel</span>(DEcode
     proposalValue &lt;-<span class="st"> </span><span class="kw">rnorm</span>(<span class="dv">1</span>, <span class="dt">mean =</span> currentValue, <span class="dt">sd =</span> scale)        <span class="co"># generate proposal value</span>
     model[[target]] &lt;&lt;-<span class="st"> </span>proposalValue                                 <span class="co"># put proposal value in model</span>
     proposalLogProb &lt;-<span class="st"> </span>model<span class="op">$</span><span class="kw">calculate</span>(calcNodes)                     <span class="co"># calculate log &quot;numerator&quot; </span>
-    logAcceptanceRatio &lt;-<span class="st"> </span>currentLogProb <span class="op">-</span><span class="st"> </span>proposalLogProb            <span class="co"># log acceptance ratio</span>
+    logAcceptanceRatio &lt;-<span class="st"> </span>proposalLogProb <span class="op">-</span><span class="st"> </span>currentLogProb            <span class="co"># log acceptance ratio</span>
     <span class="co"># Alternative:</span>
     <span class="co"># logAcceptanceRatio &lt;- model$calculateDiff(calcNodes)</span>
-    accept &lt;-<span class="st"> </span><span class="kw">decide</span>(logMHR)                                          <span class="co"># utility function to generate accept/reject decision</span>
+    accept &lt;-<span class="st"> </span><span class="kw">decide</span>(logAcceptanceRatio)                                          <span class="co"># utility function to generate accept/reject decision</span>
     <span class="cf">if</span>(accept)                                                        <span class="co"># accept: synchronize model -&gt; mvSaved</span>
       <span class="kw">copy</span>(<span class="dt">from =</span> model, <span class="dt">to =</span> mvSaved, <span class="dt">row =</span> <span class="dv">1</span>, <span class="dt">nodes =</span> calcNodes, <span class="dt">logProb =</span> <span class="ot">TRUE</span>)
     <span class="cf">else</span>                                                              <span class="co"># reject: synchronize mvSaved -&gt; model</span>
@@ -518,7 +518,7 @@ cmcmc<span class="op">$</span>run</code></pre></div>
 ##     ans &lt;- invisible(NULL)
 ##     ans
 ## }
-## &lt;environment: 0x5560114bf290&gt;</code></pre>
+## &lt;environment: 0x55e1ae44b360&gt;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## See where our sampler of interest is in the sampler configuration list
 mcmcConf<span class="op">$</span><span class="kw">printSamplers</span>()</code></pre></div>
 <pre><code>## [1]  RW sampler: sex_int[1]
@@ -649,8 +649,8 @@ cmcmc<span class="op">$</span>samplerFunctions</code></pre></div>
 ## function () 
 ## {
 ## }
-## &lt;bytecode: 0x556010df8958&gt;
-## &lt;environment: 0x55600c789010&gt;
+## &lt;bytecode: 0x55e1ad1eceb0&gt;
+## &lt;environment: 0x55e1a8b749d0&gt;
 ## Field &quot;CobjectInterface&quot;:
 ## An object of class &quot;uninitializedField&quot;
 ## Slot &quot;field&quot;:
@@ -703,11 +703,11 @@ cmcmc<span class="op">$</span>mvSaved[[<span class="st">'farm_effect'</span>]]</
 ## we did &quot;by hand&quot;, only iterations via cmcmc$run(), or runMCMC, which calls
 ## cmcmc$run).
 cmcmc<span class="op">$</span><span class="kw">getTimes</span>()</code></pre></div>
-<pre><code>##  [1] 0.053454 0.042886 0.050297 0.042801 0.002452 0.002907 0.004754
-##  [8] 0.006727 0.002485 0.010318 0.001045 0.002844 0.004670 0.003902
-## [15] 0.004678 0.022751 0.003877 0.003114 0.004941 0.007543 0.003111
-## [22] 0.003585 0.004190 0.001266 0.003772 0.002989 0.003656 0.002394
-## [29] 0.001715 0.097557</code></pre>
+<pre><code>##  [1] 0.053967 0.043867 0.051939 0.043200 0.002550 0.002922 0.004893
+##  [8] 0.006928 0.002633 0.010078 0.001031 0.002891 0.004518 0.003976
+## [15] 0.004803 0.023373 0.004005 0.003145 0.005105 0.007676 0.003245
+## [22] 0.003729 0.004399 0.001325 0.003877 0.003092 0.003698 0.002381
+## [29] 0.001716 0.100947</code></pre>
 </div>
 <div id="lets-make-an-interesting-sampler-4" class="slide section level1">
 <h1>Let’s make an interesting sampler (4)</h1>
@@ -875,7 +875,7 @@ vars</code></pre></div>
 }
 })</code></pre></div>
 <pre><code>##    user  system elapsed 
-##   1.229   0.000   1.230</code></pre>
+##   1.343   0.000   1.344</code></pre>
 </div>
 <div id="posterior-predictive-sampling-in-r-2" class="slide section level1">
 <h1>Posterior predictive sampling in R (2)</h1>
@@ -1016,7 +1016,7 @@ y &lt;-<span class="st"> </span>faithful<span class="op">$</span>waiting
 <pre><code>## |-------------|-------------|-------------|-------------|
 ## |-------------------------------------------------------|</code></pre>
 <pre><code>##    user  system elapsed 
-##   1.016   0.000   1.016</code></pre>
+##   1.025   0.000   1.026</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">nm &lt;-<span class="st"> </span><span class="kw">colnames</span>(paramSamples)
 <span class="kw">par</span>(<span class="dt">mfrow =</span> <span class="kw">c</span>(<span class="dv">2</span>, <span class="dv">3</span>))
 <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="kw">ncol</span>(paramSamples))
@@ -1072,7 +1072,7 @@ model_full &lt;-<span class="st"> </span><span class="kw">nimbleModel</span>(cod
 <pre><code>## |-------------|-------------|-------------|-------------|
 ## |-------------------------------------------------------|</code></pre>
 <pre><code>##    user  system elapsed 
-##   1.177   0.004   1.182</code></pre>
+##   1.124   0.012   1.136</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">nm &lt;-<span class="st"> </span><span class="kw">colnames</span>(paramSamples2)
 <span class="kw">par</span>(<span class="dt">mfrow =</span> <span class="kw">c</span>(<span class="dv">2</span>, <span class="dv">5</span>))
 <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="dv">10</span>)
@@ -1195,7 +1195,7 @@ cModel_full<span class="op">$</span>xi &lt;-<span class="st"> </span><span class
 cLatentSampler_full<span class="op">$</span><span class="kw">run</span>(paramSamples)
 })</code></pre></div>
 <pre><code>##    user  system elapsed 
-##   0.822   0.000   0.822</code></pre>
+##   0.956   0.000   0.956</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">latentSamples &lt;-<span class="st"> </span><span class="kw">as.matrix</span>(cLatentSampler_full<span class="op">$</span>mvSamplesLatent)
 
 <span class="kw">par</span>(<span class="dt">mfrow =</span> <span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">1</span>))
@@ -1262,7 +1262,7 @@ latentSampler2_full &lt;-<span class="st"> </span><span class="kw">latentSampler
 cLatentSampler2_full<span class="op">$</span><span class="kw">run</span>(<span class="kw">nrow</span>(paramSamples))
 })</code></pre></div>
 <pre><code>##    user  system elapsed 
-##   0.811   0.000   0.812</code></pre>
+##   0.820   0.000   0.821</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">latentSamples2 &lt;-<span class="st"> </span><span class="kw">as.matrix</span>(cLatentSampler2_full<span class="op">$</span>mvSamplesLatent)
 
 <span class="kw">identical</span>(latentSamples, latentSamples2)  <span class="co"># great!</span></code></pre></div>
